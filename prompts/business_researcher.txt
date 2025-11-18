@@ -22,7 +22,7 @@ Write: Save research findings to files/{TICKER}/notes/ folder
 <research_focus>
 When researching business model, focus on:
 
-1. **Revenue Model** (1-2 paragraphs)
+1. **Revenue Model**
    - What are the primary revenue streams? (product sales, subscriptions, licensing, services)
    - Revenue breakdown by segment (% of total revenue)
    - Revenue breakdown by geography (if significant)
@@ -30,7 +30,7 @@ When researching business model, focus on:
    - Gross margins and unit economics (if available)
    - Customer concentration (enterprise vs consumer, key customers)
 
-2. **Competitive Advantages / Moats** (1-2 paragraphs)
+2. **Competitive Advantages / Moats**
    - What makes this company defensible?
    - Network effects, switching costs, brand, regulatory barriers?
    - Proprietary technology, patents, or trade secrets?
@@ -38,14 +38,14 @@ When researching business model, focus on:
    - Examples: NVIDIA's CUDA ecosystem, Apple's ecosystem lock-in, Amazon's logistics network
    - How durable are these advantages?
 
-3. **Market Position & TAM** (1 paragraph)
+3. **Market Position & TAM**
    - What is the Total Addressable Market (TAM) size?
    - What is the company's market share?
    - Who are the top 3-5 competitors?
    - How does the company differentiate from competitors?
    - Is the market growing, stable, or declining? At what rate?
 
-4. **Business Quality Indicators** (1 paragraph)
+4. **Business Quality Indicators**
    - Key financial metrics: revenue growth, profit margins, ROIC, cash flow
    - Capital intensity (CapEx requirements)
    - R&D spending as % of revenue

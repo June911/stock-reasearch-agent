@@ -14,6 +14,7 @@ from claude_agent_sdk import (
 from utils.subagent_tracker import SubagentTracker
 from utils.transcript import setup_session, TranscriptWriter
 from utils.message_handler import process_assistant_message
+from tools.sec_agent_tool import SECAgentTool, build_sec_mcp_server
 
 # Load environment variables
 load_dotenv()
@@ -55,17 +56,26 @@ async def chat():
     # Initialize subagent tracker with transcript writer and session directory
     tracker = SubagentTracker(transcript_writer=transcript, session_dir=session_dir)
 
+    # Initialize SEC tools via MCP server
+    sec_tool = SECAgentTool()
+    sec_mcp_server = build_sec_mcp_server(sec_tool)
+
     # Define specialized subagents
     agents = {
         "history-researcher": AgentDefinition(
             description=(
                 "Use this agent to research company founding history, product evolution, "
                 "key milestones, and historical stock performance. The history researcher uses "
-                "web search to find founding stories, product transitions, major acquisitions, "
-                "IPO details, and stock performance context. Writes findings to "
+                "SEC Edgar API for exact dates/financials and web search for narrative context. "
+                "It can fetch 10-K/10-Q filings and extract financial metrics. Writes findings to "
                 "files/{TICKER}/notes/history.md for later use by report writers."
             ),
-            tools=["WebSearch", "Write"],
+            tools=[
+                "WebSearch",
+                "Write",
+                "get_company_filings",
+                "get_financial_snapshot",
+            ],
             prompt=history_researcher_prompt,
             model="haiku",
         ),
@@ -129,6 +139,7 @@ async def chat():
         allowed_tools=["Task"],
         agents=agents,
         hooks=hooks,
+        mcp_servers={"sec": sec_mcp_server},
         model="haiku",
     )
 

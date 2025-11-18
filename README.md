@@ -148,7 +148,7 @@ stock-research-agent/
 │   ├── message_handler.py   # Processes agent messages
 │   └── transcript.py        # Session logging
 ├── tools/                   # Additional tools
-│   └── sec_tools.py         # SEC filing tools (mock)
+│   └── sec_tools.py         # SEC Edgar integration helpers
 ├── files/                   # Output directories (one subfolder per ticker)
 │   └── <TICKER>/            # e.g., files/NVDA/
 │       ├── report.md        # Final Investment Memo
@@ -231,10 +231,12 @@ Generated memos follow this format:
 | Agent | Tools | Purpose |
 |-------|-------|---------|
 | Lead Agent | Task | Orchestrates workflow, spawns subagents |
-| History Researcher | WebSearch, Write | Company founding, product evolution, milestones |
+| History Researcher | WebSearch, Write, SEC Tools | Company founding, product evolution, milestones, IPO details (uses SEC API for exact dates/financials) |
 | Business Researcher | WebSearch, Write | Revenue model, moats, competitive position |
 | Org Researcher | WebSearch, Write | Leadership, board, ownership, compensation |
 | Report Writer | Glob, Read, Write | Synthesizes research into Investment Memo |
+
+**Note:** History Researcher now integrates with SEC Edgar API to fetch exact IPO dates, filing URLs, and financial metrics directly from 10-K/10-Q filings, complementing WebSearch results with authoritative data.
 
 ## 🔍 Example Output
 
@@ -256,14 +258,72 @@ Generated memos follow this format:
   - Conclusion & Monitoring Points
   - Complete Source List
 
+## 🧾 SEC Edgar Integration
+
+The `tools/sec_tools.py` module now calls the official Edgar data endpoints to
+retrieve the latest 10-K, 10-Q, and DEF 14A filings plus core XBRL metrics.
+
+### Required Environment
+
+Per SEC fair access policy you must identify yourself with a descriptive
+User-Agent and contact email:
+
+```bash
+export SEC_USER_AGENT="StockResearchAgent/0.1 (research@example.com)"
+# or set a contact and optional app name:
+export SEC_CONTACT="research@example.com"
+export SEC_APP_NAME="StockResearchAgent"
+```
+
+Optional knobs:
+
+- `SEC_REQUEST_DELAY` (default `0.2` seconds) throttles requests.
+
+### Example Usage
+
+```python
+from tools.sec_tools import SECTools
+
+sec = SECTools()
+ten_k = sec.get_latest_10k("NVDA")
+financials = sec.extract_financial_tables(ten_k["url"])
+print(ten_k["url"])
+print(financials["income_statement"]["total_revenue"])
+```
+
+The helper automatically:
+
+- Maps tickers → CIKs via SEC reference data (cached for 24h under `tools/.sec_cache`)
+- Calls `data.sec.gov/submissions` for filing metadata
+- Calls `data.sec.gov/api/xbrl/companyfacts` for normalized metrics
+- Saves each downloaded filing to `files/<TICKER>/filings/<ACCESSION>/` with metadata for reuse
+- Returns structured snapshots ready for downstream analysis
+
+### Integrated into History Researcher
+
+**The History Researcher agent now automatically uses SEC tools!**
+
+When researching company history, it:
+1. **First** calls `get_company_filings(ticker)` to get exact filing dates and URLs
+2. **Optionally** calls `get_financial_snapshot(ticker)` for revenue/profitability history
+3. **Then** uses WebSearch for narrative context and founder stories
+4. **Combines** SEC hard data (dates, numbers) with WebSearch narratives
+
+This ensures:
+- **Exact IPO dates** from actual S-1 filings
+- **Precise financial milestones** from 10-K/10-Q reports
+- **Official business descriptions** from SEC filings
+- **Authoritative sources** cited in research notes
+
+No additional configuration needed - just set `SEC_CONTACT` in your `.env` file!
+
 ## 📈 Future Enhancements
 
-### SEC Filing Integration
-The `tools/sec_tools.py` module is currently a mock. Future versions could:
-- Integrate with SEC Edgar API
-- Parse 10-K, 10-Q, and proxy statements (DEF 14A)
-- Extract financial tables from XBRL data
-- Analyze MD&A sections with NLP
+### SEC Filing Enhancements
+Future iterations can build on the live Edgar integration to:
+- Parse MD&A sections with NLP
+- Extract detailed tables (segment revenue, compensation, proposals)
+- Support additional forms (8-K, S-1) and historical ranges
 
 ### Additional Researchers
 Consider adding:
@@ -310,6 +370,36 @@ Add a new dependency:
 ```bash
 uv add <package-name>
 ```
+
+### Testing Individual Agents
+
+The `single_agent.py` script allows you to run individual researchers without the lead coordinator for testing:
+
+```bash
+# Test history researcher
+python single_agent.py --agent history --ticker NVDA
+
+# Test business researcher
+python single_agent.py --agent business --ticker AAPL
+
+# Test organization researcher
+python single_agent.py --agent organization --ticker TSLA
+
+# Test report writer (requires research notes already exist)
+python single_agent.py --agent report --ticker NVDA
+
+# Use different model
+python single_agent.py --agent history --ticker NVDA --model sonnet
+
+# Custom instruction
+python single_agent.py --agent history --ticker NVDA --instruction "Focus only on the founding story"
+```
+
+This is useful for:
+- Debugging individual agent prompts
+- Testing changes without running the full pipeline
+- Generating partial research for specific companies
+- Experimenting with different models
 
 ## 🛠️ Customization
 

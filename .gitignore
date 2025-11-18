@@ -13,6 +13,12 @@ uv.lock
 # Session logs
 logs/
 
+# SEC Edgar cache
+tools/.sec_cache/
+
+# Generated research outputs
+files/*/
+
 # IDE
 .vscode/
 .idea/
