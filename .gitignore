@@ -1,0 +1,27 @@
+# Environment
+.env
+venv/
+env/
+.venv/
+*.pyc
+__pycache__/
+
+# uv
+uv.lock
+.python-version
+
+# Session logs
+logs/
+
+# Generated research outputs
+files/research_notes/
+files/reports/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
