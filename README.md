@@ -35,10 +35,10 @@ The research is synthesized into a professional Investment Memo following standa
           │                │                │
           └────────────────┼────────────────┘
                            ▼
-                  files/research_notes/
-                  - TICKER_history.md
-                  - TICKER_business.md
-                  - TICKER_organization.md
+                 files/TICKER/
+                 - notes/history.md
+                 - notes/business.md
+                 - notes/organization.md
                            │
                            ▼
                 ┌──────────────────────┐
@@ -50,8 +50,8 @@ The research is synthesized into a professional Investment Memo following standa
                 └──────────────────────┘
                            │
                            ▼
-                  files/reports/
-                  - TICKER_memo.md
+                 files/TICKER/
+                 - report.md
 ```
 
 ## 🚀 Quick Start
@@ -128,9 +128,9 @@ Enter ticker symbol (e.g., NVDA, AAPL): NVDA
 The system will:
 1. Spawn 3 researchers in parallel
 2. Each researcher uses WebSearch 5-10 times to gather information
-3. Save research notes to `files/research_notes/`
+3. Save research notes to `files/NVDA/notes/`
 4. Spawn report writer to synthesize findings
-5. Generate Investment Memo at `files/reports/NVDA_memo.md`
+5. Generate Investment Memo at `files/NVDA/report.md`
 
 ## 📁 Directory Structure
 
@@ -149,9 +149,13 @@ stock-research-agent/
 │   └── transcript.py        # Session logging
 ├── tools/                   # Additional tools
 │   └── sec_tools.py         # SEC filing tools (mock)
-├── files/                   # Output directories
-│   ├── research_notes/      # Intermediate research
-│   └── reports/             # Final Investment Memos
+├── files/                   # Output directories (one subfolder per ticker)
+│   └── <TICKER>/            # e.g., files/NVDA/
+│       ├── report.md        # Final Investment Memo
+│       └── notes/           # Intermediate research
+│           ├── history.md
+│           ├── business.md
+│           └── organization.md
 └── logs/                    # Session transcripts
     └── session_YYYYMMDD_HHMMSS/
         ├── transcript.txt   # Human-readable log
@@ -218,8 +222,8 @@ Generated memos follow this format:
 - Specific numbers, dates, and URLs required
 
 ### 4. File System as Memory
-- `files/research_notes/` stores intermediate research
-- `files/reports/` stores final Investment Memos
+- `files/<TICKER>/notes/` stores intermediate research
+- `files/<TICKER>/report.md` stores final Investment Memos
 - Markdown format for easy reading and version control
 
 ## 🎯 Agent Responsibilities
@@ -237,12 +241,12 @@ Generated memos follow this format:
 **Input:** `NVDA`
 
 **Research Notes Generated:**
-- `files/research_notes/NVDA_history.md` (4-5 paragraphs)
-- `files/research_notes/NVDA_business.md` (4-5 paragraphs)
-- `files/research_notes/NVDA_organization.md` (4-5 paragraphs)
+- `files/NVDA/notes/history.md` (4-5 paragraphs)
+- `files/NVDA/notes/business.md` (4-5 paragraphs)
+- `files/NVDA/notes/organization.md` (4-5 paragraphs)
 
 **Investment Memo Generated:**
-- `files/reports/NVDA_memo.md` (1500-2500 words)
+- `files/NVDA/report.md` (1500-2500 words)
   - Executive Summary
   - Investment Thesis
   - Company Overview (history, business, competitive position)

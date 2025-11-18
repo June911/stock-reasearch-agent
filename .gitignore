@@ -13,10 +13,6 @@ uv.lock
 # Session logs
 logs/
 
-# Generated research outputs
-files/research_notes/
-files/reports/
-
 # IDE
 .vscode/
 .idea/

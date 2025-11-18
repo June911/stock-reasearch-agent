@@ -4,7 +4,12 @@ import asyncio
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, AgentDefinition, HookMatcher
+from claude_agent_sdk import (
+    ClaudeSDKClient,
+    ClaudeAgentOptions,
+    AgentDefinition,
+    HookMatcher,
+)
 
 from utils.subagent_tracker import SubagentTracker
 from utils.transcript import setup_session, TranscriptWriter
@@ -58,11 +63,11 @@ async def chat():
                 "key milestones, and historical stock performance. The history researcher uses "
                 "web search to find founding stories, product transitions, major acquisitions, "
                 "IPO details, and stock performance context. Writes findings to "
-                "files/research_notes/{TICKER}_history.md for later use by report writers."
+                "files/{TICKER}/notes/history.md for later use by report writers."
             ),
             tools=["WebSearch", "Write"],
             prompt=history_researcher_prompt,
-            model="haiku"
+            model="haiku",
         ),
         "business-researcher": AgentDefinition(
             description=(
@@ -70,11 +75,11 @@ async def chat():
                 "market positioning, and financial metrics. The business researcher uses web search "
                 "to find revenue breakdowns, profit margins, competitive moats, TAM analysis, and "
                 "competitive landscape information. Writes findings to "
-                "files/research_notes/{TICKER}_business.md for later use by report writers."
+                "files/{TICKER}/notes/business.md for later use by report writers."
             ),
             tools=["WebSearch", "Write"],
             prompt=business_researcher_prompt,
-            model="haiku"
+            model="haiku",
         ),
         "org-researcher": AgentDefinition(
             description=(
@@ -82,42 +87,40 @@ async def chat():
                 "ownership structure, and executive compensation. The org researcher uses web search "
                 "to find CEO background, executive team details, board members, insider ownership, "
                 "institutional holders, and compensation alignment. Writes findings to "
-                "files/research_notes/{TICKER}_organization.md for later use by report writers."
+                "files/{TICKER}/notes/organization.md for later use by report writers."
             ),
             tools=["WebSearch", "Write"],
             prompt=org_researcher_prompt,
-            model="haiku"
+            model="haiku",
         ),
         "report-writer": AgentDefinition(
             description=(
                 "Use this agent to create a comprehensive Investment Memo document. "
-                "The report-writer reads research findings from files/research_notes/ "
+                "The report-writer reads research findings from files/{TICKER}/notes/ "
                 "(history, business, organization files) and synthesizes them into a structured "
-                "Investment Memo saved to files/reports/{TICKER}_memo.md. "
+                "Investment Memo saved to files/{TICKER}/report.md. "
                 "Follows standard investment memo format with executive summary, investment thesis, "
                 "company overview, financial analysis, management assessment, bull/bear cases, and risks. "
                 "Does NOT conduct web searches - only reads existing research notes and creates memos."
             ),
             tools=["Glob", "Read", "Write"],
             prompt=report_writer_prompt,
-            model="haiku"
-        )
+            model="haiku",
+        ),
     }
 
     # Set up hooks for tracking
     hooks = {
-        'PreToolUse': [
+        "PreToolUse": [
             HookMatcher(
-                matcher=None,  # Match all tools
-                hooks=[tracker.pre_tool_use_hook]
+                matcher=None, hooks=[tracker.pre_tool_use_hook]  # Match all tools
             )
         ],
-        'PostToolUse': [
+        "PostToolUse": [
             HookMatcher(
-                matcher=None,  # Match all tools
-                hooks=[tracker.post_tool_use_hook]
+                matcher=None, hooks=[tracker.post_tool_use_hook]  # Match all tools
             )
-        ]
+        ],
     }
 
     options = ClaudeAgentOptions(
@@ -126,12 +129,12 @@ async def chat():
         allowed_tools=["Task"],
         agents=agents,
         hooks=hooks,
-        model="haiku"
+        model="haiku",
     )
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("🏦 STOCK RESEARCH AGENT")
-    print("="*70)
+    print("=" * 70)
     print("\nAnalyze any public company by providing its ticker symbol.")
     print("I'll research the company across 3 dimensions:")
     print("  1. Company History (founding, evolution, milestones)")
@@ -139,17 +142,19 @@ async def chat():
     print("  3. Organization (leadership, board, ownership)")
     print("\nThen I'll synthesize findings into a comprehensive Investment Memo.")
     print(f"\nSession logs: {session_dir}")
-    print(f"Research notes: files/research_notes/")
-    print(f"Investment memos: files/reports/")
+    print(f"Research notes: files/<TICKER>/notes/")
+    print(f"Investment memos: files/<TICKER>/report.md")
     print("\nType 'exit' or 'quit' to end.\n")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     try:
         async with ClaudeSDKClient(options=options) as client:
             while True:
                 # Get input
                 try:
-                    user_input = input("Enter ticker symbol (e.g., NVDA, AAPL): ").strip()
+                    user_input = input(
+                        "Enter ticker symbol (e.g., NVDA, AAPL): "
+                    ).strip()
                 except (EOFError, KeyboardInterrupt):
                     break
 
@@ -166,7 +171,7 @@ async def chat():
 
                 # Stream and process response
                 async for msg in client.receive_response():
-                    if type(msg).__name__ == 'AssistantMessage':
+                    if type(msg).__name__ == "AssistantMessage":
                         process_assistant_message(msg, tracker, transcript)
 
                 transcript.write("\n")
@@ -180,8 +185,8 @@ async def chat():
         print(f"Session logs: {session_dir}")
         print(f"  - Transcript: {transcript_file}")
         print(f"  - Tool calls: {session_dir / 'tool_calls.jsonl'}")
-        print(f"\nResearch notes: files/research_notes/")
-        print(f"Investment memos: files/reports/")
+        print(f"\nResearch notes: files/<TICKER>/notes/")
+        print(f"Investment memos: files/<TICKER>/report.md")
         print(f"{'='*70}\n")
 
 

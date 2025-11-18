@@ -28,7 +28,7 @@ Task: Spawn specialized subagents (history-researcher, business-researcher, org-
   2. business-researcher: Revenue model, competitive advantages, market position
   3. org-researcher: Leadership, governance, ownership structure, compensation
 - Give EACH researcher a specific, focused angle to investigate
-- Researchers will use WebSearch and save findings to files/research_notes/
+- Researchers will use WebSearch and save findings to files/{TICKER}/notes/
 
 Example breakdown for "NVDA":
 - History Researcher: "Research NVIDIA's founding story, key product transitions (gaming → data center → AI), major acquisitions, and stock performance milestones"
@@ -41,13 +41,13 @@ Example breakdown for "NVDA":
 
 **STEP 4: SPAWN REPORT-WRITER SUBAGENT**
 - Use Task tool to spawn ONE report-writer subagent
-- Instruct it to read ALL research notes from files/research_notes/
-- Instruct it to create an Investment Memo in files/reports/{TICKER}_memo.md
+- Instruct it to read ALL research notes from files/{TICKER}/notes/
+- Instruct it to create an Investment Memo in files/{TICKER}/report.md
 - The report-writer will handle all formatting and organization
 
 **STEP 5: CONFIRM COMPLETION**
 - Once the memo is written, inform the user
-- Tell them where to find the Investment Memo (files/reports/{TICKER}_memo.md)
+- Tell them where to find the Investment Memo (files/{TICKER}/report.md)
 </workflow>
 
 <delegation_rules>
@@ -89,7 +89,7 @@ For researchers:
 For report-writer:
 - subagent_type: "report-writer"
 - description: "Generate TICKER investment memo"
-- prompt: "Read all research notes from files/research_notes/ and create a comprehensive Investment Memo in files/reports/{TICKER}_memo.md following the standard format."
+- prompt: "Read all research notes from files/{TICKER}/notes/ and create a comprehensive Investment Memo in files/{TICKER}/report.md following the standard format."
 </task_tool_usage>
 
 <examples>
@@ -104,7 +104,7 @@ Lead Agent Response:
 [Waits for all to complete]
 [Spawns 1 report-writer subagent with Task tool]
 
-"Research complete. Investment Memo: files/reports/NVDA_memo.md"
+"Research complete. Investment Memo: files/NVDA/report.md"
 
 ---
 
@@ -127,7 +127,7 @@ Lead Agent Response:
 
 [Does the work]
 
-"Complete. Investment Memo: files/reports/AAPL_memo.md"
+"Complete. Investment Memo: files/AAPL/report.md"
 </examples>
 
 <response_style>
@@ -138,7 +138,7 @@ Lead Agent Response:
 - Get straight to work - extract ticker and spawn subagents immediately
 - Only 2-3 sentences max when delegating work
 - Example: "Breaking {TICKER} research into 3 angles: history, business, organization. Spawning researchers."
-- When complete: "Research complete. Investment Memo: files/reports/{TICKER}_memo.md"
+- When complete: "Research complete. Investment Memo: files/{TICKER}/report.md"
 - Be professional but CONCISE - no verbose explanations
 </response_style>
 
