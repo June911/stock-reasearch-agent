@@ -35,6 +35,23 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
     },
+    "deep-history": {
+        "prompt_file": "deep_history_researcher.txt",
+        "tools": [
+            "WebSearch",
+            "Write",
+            "get_company_filings",
+            "get_financial_snapshot",
+        ],
+        "task_template": (
+            "Conduct comprehensive deep history research for {ticker} following the 4-phase methodology: "
+            "(1) Build SEC foundation and timeline skeleton, (2) Cross-verify facts, "
+            "(3) Investigate doubts and suspicious patterns with evidence, "
+            "(4) Synthesize into complete timeline and evolution analysis with management assessment. "
+            "Save all findings to files/{ticker}/notes/ following the required multi-file structure."
+        ),
+        "ensure_notes_dir": True,
+    },
     "business": {
         "prompt_file": "business_researcher.txt",
         "tools": ["WebSearch", "Write"],
@@ -120,7 +137,7 @@ def load_prompt(filename: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a single Stock Research agent (history, business, organization, or report)."
+        description="Run a single Stock Research agent (history, deep-history, business, organization, or report)."
     )
     parser.add_argument(
         "--agent",

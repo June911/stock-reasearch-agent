@@ -49,6 +49,7 @@ async def chat():
     # Load prompts
     lead_agent_prompt = load_prompt("lead_agent.txt")
     history_researcher_prompt = load_prompt("history_researcher.txt")
+    deep_history_researcher_prompt = load_prompt("deep_history_researcher.txt")
     business_researcher_prompt = load_prompt("business_researcher.txt")
     org_researcher_prompt = load_prompt("org_researcher.txt")
     report_writer_prompt = load_prompt("report_writer.txt")
@@ -68,7 +69,8 @@ async def chat():
                 "key milestones, and historical stock performance. The history researcher uses "
                 "SEC Edgar API for exact dates/financials and web search for narrative context. "
                 "It can fetch 10-K/10-Q filings and extract financial metrics. Writes findings to "
-                "files/{TICKER}/notes/history.md for later use by report writers."
+                "files/{TICKER}/notes/history.md for later use by report writers. "
+                "OUTPUT: Concise 4-5 paragraph summary (quick research, 30-60 min)."
             ),
             tools=[
                 "WebSearch",
@@ -78,6 +80,26 @@ async def chat():
             ],
             prompt=history_researcher_prompt,
             model="haiku",
+        ),
+        "deep-history-researcher": AgentDefinition(
+            description=(
+                "Use this agent for COMPREHENSIVE company history research with deep analysis. "
+                "Conducts systematic 4-phase investigation: (1) Rapid skeleton with SEC foundation, "
+                "(2) Cross-verification, (3) Deep investigation of contradictions/suspicious patterns, "
+                "(4) Synthesis with management assessment. Uses training knowledge + SEC Edgar API + "
+                "targeted WebSearch. Writes multiple detailed files including complete timeline, "
+                "doubt list, investigation reports, and evolution analysis with management quality "
+                "assessment and investment implications. Best for building company knowledge base. "
+                "OUTPUT: Comprehensive multi-file knowledge base (deep research, 2.5-4.5 hours)."
+            ),
+            tools=[
+                "WebSearch",
+                "Write",
+                "get_company_filings",
+                "get_financial_snapshot",
+            ],
+            prompt=deep_history_researcher_prompt,
+            model="haiku",  # Use haiku for cost-effective deep analysis
         ),
         "business-researcher": AgentDefinition(
             description=(
