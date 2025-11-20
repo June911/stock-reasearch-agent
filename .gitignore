@@ -17,11 +17,11 @@ logs/
 tools/.sec_cache/
 
 # Generated research outputs
-# Ignore specific subdirectories in files/*
-files/*/filings/
+# Allow all files directory content (research findings, reports, notes, filings)
+# Only ignore system files and caches
 files/*/.DS_Store
-# Allow notes directories (research findings)
-!files/*/notes/
+files/*/notes/.DS_Store
+files/*/notes/*/.DS_Store
 
 # IDE
 .vscode/
