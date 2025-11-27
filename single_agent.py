@@ -26,6 +26,7 @@ AGENT_PRESETS = {
         "tools": [
             "WebSearch",
             "Write",
+            "Read",
             "get_company_filings",
             "get_financial_snapshot",
         ],
@@ -40,6 +41,7 @@ AGENT_PRESETS = {
         "tools": [
             "WebSearch",
             "Write",
+            "Read",
             "get_company_filings",
             "get_financial_snapshot",
         ],
@@ -61,6 +63,26 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
     },
+    "deep-business": {
+        "prompt_file": "deep_business_researcher.txt",
+        "tools": [
+            "WebSearch",
+            "Write",
+            "Read",
+            "get_company_filings",
+            "get_financial_snapshot",
+        ],
+        "task_template": (
+            "Conduct comprehensive deep business model research for {ticker} following the 2-phase methodology: "
+            "(1) Build complete business model documentation from authoritative sources (9 modules), "
+            "(2) Test investment-critical assumptions with evidence (5 key questions). "
+            "Save all findings to files/{ticker}/notes/business-model/ following the required structure: "
+            "complete_model.md (Phase 1) and model_assessment.md (Phase 2). "
+            "IMPORTANT: Use full relative paths starting with 'files/' when calling Write tool, "
+            "e.g., 'files/{ticker}/notes/business-model/complete_model.md'. Do NOT use absolute paths."
+        ),
+        "ensure_notes_dir": True,
+    },
     "organization": {
         "prompt_file": "org_researcher.txt",
         "tools": ["WebSearch", "Write"],
@@ -78,6 +100,26 @@ AGENT_PRESETS = {
             "Investment Memo for {ticker}, saving it to files/{ticker}/report.md."
         ),
         "ensure_notes_dir": False,
+    },
+    "deep-industrial": {
+        "prompt_file": "deep_industrial_researcher.txt",
+        "tools": [
+            "WebSearch",
+            "Write",
+        ],
+        "task_template": (
+            "Conduct comprehensive deep industrial research for {ticker}. "
+            "If the input is a ticker symbol, first identify the corresponding industry/sector using WebSearch, "
+            "then follow the 2-phase methodology: "
+            "(1) Build complete industry picture and understand mechanisms (What + Why), "
+            "(2) Form investment judgment based on evidence (So What). "
+            "Save findings to files/{ticker}/notes/ (use the ticker symbol as directory name) "
+            "following the required structure: "
+            "industry_analysis.md (Phase 1) and investment_view.md (Phase 2). "
+            "IMPORTANT: Use full relative paths starting with 'files/' when calling Write tool, "
+            "e.g., 'files/{ticker}/notes/industry_analysis.md'. Do NOT use absolute paths or paths starting with '~/'."
+        ),
+        "ensure_notes_dir": True,
     },
 }
 
@@ -137,7 +179,7 @@ def load_prompt(filename: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a single Stock Research agent (history, deep-history, business, organization, or report)."
+        description="Run a single Stock Research agent (history, deep-history, business, deep-business, organization, report, or deep-industrial)."
     )
     parser.add_argument(
         "--agent",
@@ -172,7 +214,12 @@ def ensure_directories(ticker: str, ensure_notes_dir: bool) -> Path:
 
 async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | None):
     config = AGENT_PRESETS[agent_key]
-    prompt = load_prompt(config["prompt_file"]).replace("{TICKER}", ticker)
+    prompt = load_prompt(config["prompt_file"])
+    # Replace {TICKER} placeholder with ticker
+    prompt = prompt.replace("{TICKER}", ticker)
+    # For deep-industrial agent, don't replace {INDUSTRY} - let agent identify it
+    if agent_key != "deep-industrial":
+        prompt = prompt.replace("{INDUSTRY}", ticker)
     base_dir = ensure_directories(ticker, config["ensure_notes_dir"])
 
     transcript_file, session_dir = setup_session()
