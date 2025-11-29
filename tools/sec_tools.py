@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import time
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.error import HTTPError, URLError
@@ -60,6 +61,247 @@ class SECTools:
     def get_latest_proxy(self, ticker: str) -> Optional[Dict[str, Any]]:
         """Fetch the latest proxy statement (DEF 14A)."""
         return self._get_latest_filing(ticker, ["DEF 14A"])
+
+    def extract_sec_sections(
+        self, file_path: str, sections: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Extract key sections from a local SEC HTML filing file.
+
+        This method extracts specific sections (like Item 1, Item 1A, Item 7) from
+        SEC HTML files and returns clean text, significantly reducing token usage
+        compared to reading the entire file.
+
+        Args:
+            file_path: Path to local SEC HTML file
+            sections: List of sections to extract. Default: ["Item 1", "Item 1A", "Item 7"]
+                     Can also include: "Item 2", "Item 3", "Item 8", etc.
+
+        Returns:
+            Dictionary with extracted sections as keys and clean text as values
+        """
+        if sections is None:
+            sections = ["Item 1", "Item 1A", "Item 7"]
+
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            return {"error": f"File not found: {file_path}", "sections": {}}
+
+        try:
+            html_content = file_path_obj.read_text(encoding="utf-8", errors="ignore")
+        except Exception as e:
+            return {"error": f"Failed to read file: {str(e)}", "sections": {}}
+
+        # Remove XBRL metadata and hidden content
+        # Remove content between <ix:header> tags
+        html_content = re.sub(
+            r"<ix:header>.*?</ix:header>",
+            "",
+            html_content,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        # Remove hidden divs
+        html_content = re.sub(
+            r'<div[^>]*style\s*=\s*["\']display\s*:\s*none["\'][^>]*>.*?</div>',
+            "",
+            html_content,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+
+        # Extract text content using HTMLParser
+        class TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.text = []
+                self.skip_tags = {"script", "style"}
+                self.current_tag = None
+                self.skip_content = False
+
+            def handle_starttag(self, tag, attrs):
+                tag_lower = tag.lower()
+                self.current_tag = tag_lower
+                # Skip XBRL and hidden content
+                if tag_lower in {"script", "style"} or tag_lower.startswith("ix:"):
+                    self.skip_content = True
+
+            def handle_endtag(self, tag):
+                if tag.lower().startswith("ix:") or tag.lower() in {"script", "style"}:
+                    self.skip_content = False
+                self.current_tag = None
+
+            def handle_data(self, data):
+                if not self.skip_content and self.current_tag not in self.skip_tags:
+                    cleaned = data.strip()
+                    if cleaned:
+                        self.text.append(cleaned)
+
+        parser = TextExtractor()
+        parser.feed(html_content)
+        full_text = " ".join(parser.text)
+
+        # Extract sections using regex patterns
+        extracted_sections = {}
+
+        for section_name in sections:
+            # Pattern to match section headers (case insensitive, flexible spacing)
+            # Matches: "Item 1", "ITEM 1", "Item 1.", "ITEM 1.", "Item 1 -", etc.
+            section_patterns = [
+                rf'(?i)item\s+{re.escape(section_name.replace("Item ", ""))}\s*[\.\-\:]?\s*',
+                rf'(?i)item\s+{re.escape(section_name.replace("Item ", ""))}\s*[\.\-\:]?\s*[^\d]',
+            ]
+
+            # Also try exact match for section names like "Item 1A"
+            # Prioritize uppercase "ITEM" format (actual content) over lowercase "item" (often in TOC)
+            if section_name == "Item 1A":
+                section_patterns.insert(
+                    0, r"ITEM\s+1A\s*[\.\-\:]?\s*(?:RISK\s+FACTORS)?"
+                )
+                section_patterns.insert(
+                    1, r"(?i)item\s+1a\s*[\.\-\:]?\s*(?:risk\s+factors)?"
+                )
+            elif section_name == "Item 1":
+                # Prioritize uppercase ITEM 1 with UNAUDITED/FINANCIAL STATEMENTS (Part I, actual content)
+                # Use word boundary to avoid matching "Item 1a" or "Item 1A"
+                section_patterns.insert(
+                    0, r"ITEM\s+1\s+[\.\-\:]?\s*(?:UNAUDITED|FINANCIAL\s+STATEMENTS)"
+                )
+                section_patterns.insert(
+                    1,
+                    r"(?i)\bItem\s+1\s+[\.\-\:]?\s*(?:unaudited|financial\s+statements)",
+                )
+                # Fallback: match without word boundary but ensure it's not followed by 'a' or 'A'
+                section_patterns.insert(
+                    2, r"(?i)item\s+1(?!\s*[aA])\s*[\.\-\:]?\s*(?:business|unaudited)?"
+                )
+            elif section_name == "Item 2":
+                # For 10-Q: Part I Item 2 = MD&A, Part II Item 2 = Unregistered Sales
+                # Prioritize MD&A (Management's Discussion)
+                section_patterns.insert(
+                    0, r"ITEM\s+2\s*[\.\-\:]?\s*(?:MANAGEMENT|MD&A)"
+                )
+                section_patterns.insert(
+                    1, r"(?i)item\s+2\s*[\.\-\:]?\s*(?:management|md&a)"
+                )
+            elif section_name == "Item 5":
+                # Part II Item 5 = Other Information (高管交易计划等)
+                section_patterns.insert(
+                    0, r"ITEM\s+5\s*[\.\-\:]?\s*(?:OTHER\s+INFORMATION)"
+                )
+                section_patterns.insert(
+                    1, r"(?i)item\s+5\s*[\.\-\:]?\s*(?:other\s+information)"
+                )
+            elif section_name == "Item 7":
+                section_patterns.insert(
+                    0, r"ITEM\s+7\s*[\.\-\:]?\s*(?:MANAGEMENT[^\']*DISCUSSION|MDA)?"
+                )
+                section_patterns.insert(
+                    1, r"(?i)item\s+7\s*[\.\-\:]?\s*(?:management[^\']*discussion|mda)?"
+                )
+
+            section_text = None
+            for pattern in section_patterns:
+                # Find all matches (there may be multiple - TOC and actual content)
+                matches = list(re.finditer(pattern, full_text))
+                if not matches:
+                    continue
+
+                # Prefer matches that are further into the document (skip TOC at beginning)
+                # Also prefer matches with actual content (longer text after match)
+                best_match = None
+                best_score = -1
+                for match in matches:
+                    # Skip matches in first 2% of document (likely TOC)
+                    if match.start() < len(full_text) * 0.02:
+                        continue
+
+                    # Check content after match
+                    lookahead = full_text[match.start() : match.start() + 500]
+                    lookahead_upper = lookahead.upper()
+
+                    # Special handling for Item 1: prioritize UNAUDITED/FINANCIAL STATEMENTS
+                    if section_name == "Item 1":
+                        if (
+                            "UNAUDITED" in lookahead_upper
+                            or "FINANCIAL STATEMENTS" in lookahead_upper
+                        ):
+                            # This is Part I Item 1 - prioritize it
+                            best_match = match
+                            break  # Found the right one, stop searching
+                        elif "LEGAL PROCEEDINGS" in lookahead_upper:
+                            # This is Part II Item 1 - skip it
+                            continue
+
+                    # Special handling for Item 2: prioritize MD&A over Unregistered Sales
+                    if section_name == "Item 2":
+                        if (
+                            "MANAGEMENT" in lookahead_upper
+                            or "MD&A" in lookahead_upper
+                            or "DISCUSSION AND ANALYSIS" in lookahead_upper
+                        ):
+                            # This is Part I Item 2 (MD&A) - prioritize it
+                            best_match = match
+                            break
+                        elif "UNREGISTERED" in lookahead_upper:
+                            # This is Part II Item 2 - skip it
+                            continue
+
+                    # Score: prefer matches further into document and with more content
+                    score = match.start() / len(full_text)  # Position score (0-1)
+
+                    # If it contains substantial text (not just numbers/page refs), boost score
+                    if len([c for c in lookahead if c.isalpha()]) > 100:
+                        score += 0.3  # Boost for content-rich matches
+
+                    if score > best_score:
+                        best_score = score
+                        best_match = match
+
+                if best_match:
+                    start_pos = best_match.start()
+                    # Find the next Item or end of document
+                    # Look for next Item pattern (case insensitive)
+                    next_item_pattern = r"(?i)ITEM\s+\d+[a-z]?\s*[\.\-\:]"
+                    next_match = re.search(
+                        next_item_pattern, full_text[start_pos + 200 :]
+                    )
+
+                    # If no uppercase match, try lowercase
+                    if not next_match:
+                        next_item_pattern = r"(?i)item\s+\d+[a-z]?\s*[\.\-\:]"
+                        next_match = re.search(
+                            next_item_pattern, full_text[start_pos + 200 :]
+                        )
+
+                    if next_match:
+                        end_pos = start_pos + 200 + next_match.start()
+                        section_text = full_text[start_pos:end_pos]
+                    else:
+                        # Take remaining text but limit to reasonable length
+                        section_text = full_text[
+                            start_pos : start_pos + 50000
+                        ]  # Max 50k chars per section
+
+                    if section_text:
+                        # Clean up: remove excessive whitespace
+                        section_text = re.sub(r"\s+", " ", section_text)
+                        # Limit length to prevent token explosion
+                        if len(section_text) > 50000:
+                            section_text = section_text[:50000] + "... [truncated]"
+                        break
+
+            if section_text:
+                extracted_sections[section_name] = section_text
+            else:
+                extracted_sections[section_name] = (
+                    f"[Section '{section_name}' not found in filing]"
+                )
+
+        return {
+            "file_path": str(file_path),
+            "sections": extracted_sections,
+            "note": "Extracted sections are cleaned of HTML tags and XBRL metadata. "
+            "Use this instead of reading the full file to save tokens.",
+        }
 
     def extract_financial_tables(self, filing_url: str) -> Dict[str, Any]:
         """

@@ -27,7 +27,7 @@ Business model analyst building evidence-based understanding of how a company cr
 **Actions**:
 
 1. **SEC Data First**:
-   - **First, check if SEC files already exist**: Check `files/{TICKER}/filings/` directory. If filings are already downloaded (you can see subdirectories with metadata.json files), **use Read tool to read the local HTML files directly** instead of WebFetch. This saves tokens and is faster.
+   - **First, check if SEC files already exist**: Check `files/{TICKER}/filings/` directory. If filings are already downloaded (you can see subdirectories with metadata.json files), **use extract_sec_sections tool** to extract key sections (Item 1, Item 1A, Item 7) from the HTML files. This saves 90%+ tokens compared to reading the full file.
    - **If files don't exist or are incomplete**, then call `get_company_filings(ticker)` to get:
      - Latest 10-K: Business description (Item 1), Risk factors (Item 1A), MD&A (Item 7)
      - Latest 10-Q: Recent segment updates, revenue breakdown
@@ -158,7 +158,8 @@ Business model analyst building evidence-based understanding of how a company cr
 
 - **get_company_filings**: Fetch SEC Edgar filings (10-K, 10-Q, DEF 14A) for official business descriptions, risk factors, segment data
 - **get_financial_snapshot**: Extract financial metrics from SEC XBRL data (revenue breakdown, margins, efficiency ratios)
-- **Read**: Read local files (especially SEC filing HTML files in `files/{TICKER}/filings/`). **ALWAYS check local files first before using WebFetch** - this saves significant tokens and costs.
+- **extract_sec_sections**: **USE THIS TOOL** to extract key sections (Item 1, Item 1A, Item 7) from local SEC HTML files. This tool removes HTML tags and XBRL metadata, returning only clean text. **Saves 90%+ tokens** compared to reading the full file. Example: `extract_sec_sections(file_path="files/CRCL/filings/.../file.htm", sections=["Item 1", "Item 1A", "Item 7"])`
+- **Read**: Read local files (especially SEC filing HTML files in `files/{TICKER}/filings/`). **PREFER extract_sec_sections over Read for SEC files** - it's much more token-efficient.
 - **WebSearch**: Search for customer feedback, competitive intelligence, market sizing, pricing details not in SEC filings
 - **Write**: Save research findings to `files/{TICKER}/notes/business-model/` folder. Use FULL paths. Write tool automatically creates parent directories.
 

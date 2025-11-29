@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
@@ -149,6 +149,36 @@ class SECAgentTool:
                 indent=2,
             )
 
+    def extract_sec_sections(
+        self, file_path: str, sections: Optional[List[str]] = None
+    ) -> str:
+        """
+        Extract key sections from a local SEC HTML filing file.
+
+        This tool extracts specific sections (like Item 1, Item 1A, Item 7) from
+        SEC HTML files and returns clean text, significantly reducing token usage
+        compared to reading the entire file.
+
+        Args:
+            file_path: Path to local SEC HTML file (e.g., files/CRCL/filings/.../file.htm)
+            sections: Optional list of sections to extract. Default: ["Item 1", "Item 1A", "Item 7"]
+
+        Returns:
+            JSON string with extracted sections
+        """
+        try:
+            result = self.sec.extract_sec_sections(file_path, sections)
+            return json.dumps(result, indent=2)
+        except Exception as e:
+            return json.dumps(
+                {
+                    "error": str(e),
+                    "file_path": file_path,
+                    "note": "Failed to extract sections. Make sure the file path is correct.",
+                },
+                indent=2,
+            )
+
     def _format_financial_item(self, items: Dict[str, Any]) -> Dict[str, Any]:
         """Format financial items for better readability."""
         formatted = {}
@@ -208,6 +238,29 @@ SEC_TOOL_DEFINITIONS = {
             "required": ["ticker"],
         },
     },
+    "extract_sec_sections": {
+        "description": (
+            "Extract key sections (Item 1, Item 1A, Item 7) from a local SEC HTML filing file. "
+            "This tool removes HTML tags and XBRL metadata, returning only clean text. "
+            "Use this instead of reading the entire file to save significant tokens (90%+ reduction). "
+            "File path should be relative to project root, e.g., 'files/CRCL/filings/.../file.htm'"
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to local SEC HTML file (relative to project root)",
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional list of sections to extract. Default: ['Item 1', 'Item 1A', 'Item 7']",
+                },
+            },
+            "required": ["file_path"],
+        },
+    },
 }
 
 
@@ -226,6 +279,9 @@ def create_sec_tool_handler():
             return sec_tool.get_company_filings(tool_input["ticker"])
         elif tool_name == "get_financial_snapshot":
             return sec_tool.get_financial_snapshot(tool_input["ticker"])
+        elif tool_name == "extract_sec_sections":
+            sections = tool_input.get("sections")
+            return sec_tool.extract_sec_sections(tool_input["file_path"], sections)
         else:
             return json.dumps({"error": f"Unknown SEC tool: {tool_name}"})
 
@@ -264,10 +320,24 @@ def build_sec_mcp_server(sec_tool: SECAgentTool | None = None):
         result = sec_tool.get_financial_snapshot(args["ticker"])
         return {"content": [{"type": "text", "text": result}]}
 
+    @tool(
+        name="extract_sec_sections",
+        description=SEC_TOOL_DEFINITIONS["extract_sec_sections"]["description"],
+        input_schema=SEC_TOOL_DEFINITIONS["extract_sec_sections"]["parameters"],
+    )
+    async def extract_sec_sections_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+        sections = args.get("sections")
+        result = sec_tool.extract_sec_sections(args["file_path"], sections)
+        return {"content": [{"type": "text", "text": result}]}
+
     return create_sdk_mcp_server(
         name="sec-tools",
         version="1.0.0",
-        tools=[get_company_filings_tool, get_financial_snapshot_tool],
+        tools=[
+            get_company_filings_tool,
+            get_financial_snapshot_tool,
+            extract_sec_sections_tool,
+        ],
     )
 
 

@@ -8,16 +8,36 @@ Company historian conducting systematic investment research using Training Knowl
 ## CORE METHODOLOGY: 4 Phases
 
 ### Phase 1: Rapid Skeleton with SEC Foundation
-**Approach**: SEC data first → Training knowledge skeleton → Mark verification points
+**Approach**: Pre-processed files first → SEC API fallback → Training knowledge skeleton → Mark verification points
 
 **Actions**:
-1. **START HERE - Get SEC Hard Data**:
-   - **First, check if SEC files already exist**: Check `files/{TICKER}/filings/` directory. If filings are already downloaded (you can see subdirectories with metadata.json files), **use Read tool to read the local HTML files directly** instead of WebFetch. This saves tokens and is faster.
-   - **If files don't exist or are incomplete**, then call `get_company_filings(ticker)` to get:
+1. **START HERE - Get SEC Hard Data** (token-efficient workflow):
+
+   **Step 1: Check for pre-processed files (MOST EFFICIENT - saves 93%+ tokens)**
+   - Read `files/{TICKER}/_index.json` to see what's already extracted
+   - If `_index.json` exists, it lists all available filings with their `raw_dir` paths
+   - Read the pre-processed markdown files directly from `files/{TICKER}/raw/{date}_{type}/`:
+     - `item1.md` - Financial statements (10-Q) or Business description (10-K)
+     - `item1a_risks.md` - Risk factors
+     - `item2.md` - MD&A (Management's Discussion)
+     - `item7_mda.md` - MD&A (10-K)
+     - `prospectus_summary.md`, `business.md`, `risk_factors.md` (S-1/424B4)
+   - The `_index.json` also contains `stats.token_savings_pct` showing how much you save
+
+   **Step 2: If pre-processed files don't exist, use extract_sec_sections**
+   - Check `files/{TICKER}/filings/` directory for raw HTML files
+   - Use `extract_sec_sections` tool on the HTML files to extract key sections
+   - This still saves 90%+ tokens compared to reading full HTML
+
+   **Step 3: If no local files at all, call SEC API**
+   - Call `get_company_filings(ticker)` to download:
      - Latest 10-K (annual report) - business description, risk factors, IPO date
      - Latest 10-Q (quarterly report) - recent updates
      - Latest DEF 14A (proxy) - governance history
-   - **If financial data not already available**, optionally call `get_financial_snapshot(ticker)` for:
+   - Then use `extract_sec_sections` on the downloaded files
+
+   **Step 4: Optional financial data**
+   - If financial data not already available, call `get_financial_snapshot(ticker)` for:
      - Revenue, profit margins, cash flow history
      - Market cap evolution
      - Historical growth rates
@@ -130,11 +150,17 @@ Company historian conducting systematic investment research using Training Knowl
 
 ## AVAILABLE TOOLS
 
-- **get_company_filings**: Fetch SEC Edgar filings (10-K, 10-Q, DEF 14A) for exact dates and official data
+- **Read**: Read local files. **START by reading `files/{TICKER}/_index.json`** to see available pre-processed content.
+- **get_company_filings**: Fetch SEC Edgar filings (10-K, 10-Q, DEF 14A) for exact dates and official data. Only call this if files don't exist locally.
 - **get_financial_snapshot**: Extract financial metrics from SEC XBRL data (revenue, margins, cash flow)
-- **Read**: Read local files (especially SEC filing HTML files in `files/{TICKER}/filings/`). **ALWAYS check local files first before using WebFetch** - this saves significant tokens and costs.
+- **extract_sec_sections**: Extract key sections from local SEC HTML files. **Use only if pre-processed files don't exist.** Saves 90%+ tokens compared to reading full HTML.
 - **WebSearch**: Search for information not in SEC filings (founder backgrounds, narratives, analyst commentary)
-- **Write**: Save research findings to files/{TICKER}/notes/deep-history/ folder. Use FULL paths (e.g., `files/VEEV/notes/deep-history/phase1_timeline.md`). Write tool automatically creates parent directories if needed - no manual directory creation required.
+- **Write**: Save research findings to files/{TICKER}/notes/deep-history/ folder. Use FULL paths (e.g., `files/VEEV/notes/deep-history/phase1_timeline.md`). Write tool automatically creates parent directories if needed.
+
+### Token-Efficient Reading Priority:
+1. **BEST**: Read `files/{TICKER}/raw/{date}_{type}/*.md` (pre-processed, ~40K tokens) - **saves 93%+**
+2. **GOOD**: Use `extract_sec_sections` on HTML files (~40K tokens) - **saves 90%+**
+3. **AVOID**: Read raw HTML files directly (~600K+ tokens) - **wasteful**
 
 ---
 
@@ -190,18 +216,31 @@ Gaming revenue declined 46% YoY in Q3 2023
 
 ```
 files/{TICKER}/
-├── notes/
-│   └── deep-history/                 # All deep history research files go here
-│       ├── phase1_timeline.md        # Phase 1 output
-│       ├── doubt_list.md             # Phase 1/2: Prioritized investigation list
-│       ├── investigations/           # Phase 3 deep dives
-│       │   ├── {topic1}.md
-│       │   ├── {topic2}.md
-│       │   └── {topic3}.md
-│       ├── complete_timeline.md      # Phase 4 comprehensive timeline
-│       └── evolution_analysis.md     # Phase 4 strategic analysis
-└── filings/                          # SEC filings auto-saved by tools
-    └── {ACCESSION}/
+├── _index.json                       # 📋 START HERE: Index of all available SEC data
+│                                     #    Contains: filings list, sections, token stats
+├── raw/                              # 📄 PRE-PROCESSED SEC content (read these!)
+│   ├── 2025-09-30_10-Q/              #    Extracted markdown files by filing date
+│   │   ├── item1.md                  #    Financial statements
+│   │   ├── item1a_risks.md           #    Risk factors
+│   │   ├── item2.md                  #    MD&A (Management's Discussion)
+│   │   └── item5_other_info.md       #    Other info (insider trading plans)
+│   └── 2025-06-05_424B4/             #    IPO prospectus sections
+│       ├── prospectus_summary.md
+│       ├── risk_factors.md
+│       ├── business.md
+│       └── mda.md
+├── filings/                          # Raw HTML files (don't read directly!)
+│   └── {date}_{type}_{accession}/
+└── notes/
+    └── deep-history/                 # Your research output goes here
+        ├── phase1_timeline.md        # Phase 1 output
+        ├── doubt_list.md             # Phase 1/2: Prioritized investigation list
+        ├── investigations/           # Phase 3 deep dives
+        │   ├── {topic1}.md
+        │   ├── {topic2}.md
+        │   └── {topic3}.md
+        ├── complete_timeline.md      # Phase 4 comprehensive timeline
+        └── evolution_analysis.md     # Phase 4 strategic analysis
 ```
 
 **REQUIRED FILES ONLY** (create these 5 types of files):

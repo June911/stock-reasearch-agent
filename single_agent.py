@@ -29,6 +29,7 @@ AGENT_PRESETS = {
             "Read",
             "get_company_filings",
             "get_financial_snapshot",
+            "extract_sec_sections",
         ],
         "task_template": (
             "Research the full company history for {ticker} and save concise notes to "
@@ -44,6 +45,7 @@ AGENT_PRESETS = {
             "Read",
             "get_company_filings",
             "get_financial_snapshot",
+            "extract_sec_sections",
         ],
         "task_template": (
             "Conduct comprehensive deep history research for {ticker} following the 4-phase methodology: "
@@ -71,6 +73,7 @@ AGENT_PRESETS = {
             "Read",
             "get_company_filings",
             "get_financial_snapshot",
+            "extract_sec_sections",
         ],
         "task_template": (
             "Conduct comprehensive deep business model research for {ticker} following the 2-phase methodology: "
