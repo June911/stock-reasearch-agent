@@ -137,7 +137,9 @@ FILING_SECTIONS = {
     "10-K": ["Item 1", "Item 1A", "Item 7", "Item 7A", "Item 8"],
     "10-Q": ["Item 1", "Item 2", "Item 1A"],
     "DEF 14A": [],  # Proxy 需要特殊处理
-    "S-1": ["Item 1", "Item 1A", "Item 7"],
+    "S-1": ["Item 1", "Item 1A", "Item 7"],  # S-1 招股书
+    "424B4": ["Item 1", "Item 1A", "Item 7"],  # 最终版招股书（结构同 S-1）
+    "424B3": ["Item 1", "Item 1A", "Item 7"],
     "8-K": [],  # 8-K 结构不固定
 }
 
@@ -189,18 +191,44 @@ def preprocess_ticker(
         print(f"预处理 {ticker} 的 SEC 文件")
         print(f"{'='*60}")
 
+    # 跟踪是否已获取 10-K（用于判断是否需要 S-1）
+    has_10k = False
+
     # 获取各类型最新 filing
     for filing_type in filing_types:
         if verbose:
             print(f"\n📄 获取 {filing_type}...")
 
         try:
+            filing = None
+            actual_type = filing_type  # 实际获取到的类型
+
             if filing_type in ["10-K", "10-K/A"]:
                 filing = tools.get_latest_10k(ticker)
+                if filing:
+                    has_10k = True
+                else:
+                    # 没有 10-K，尝试获取 S-1/424B 作为替代
+                    if verbose:
+                        print(f"  ⚠️ 未找到 10-K，尝试获取 S-1/424B 招股书...")
+                    filing = tools.get_latest_s1(ticker)
+                    if filing:
+                        actual_type = filing.get("filing_type", "S-1")
+                        if verbose:
+                            print(f"  ✓ 找到替代: {actual_type}")
             elif filing_type in ["10-Q", "10-Q/A"]:
                 filing = tools.get_latest_10q(ticker)
             elif filing_type == "DEF 14A":
                 filing = tools.get_latest_proxy(ticker)
+            elif filing_type in ["S-1", "424B4", "424B3"]:
+                # 如果已有 10-K，跳过 S-1（避免重复）
+                if has_10k:
+                    if verbose:
+                        print(f"  ⏭️ 已有 10-K，跳过 {filing_type}")
+                    continue
+                filing = tools.get_latest_s1(ticker)
+                if filing:
+                    actual_type = filing.get("filing_type", filing_type)
             else:
                 if verbose:
                     print(f"  ⚠️ 不支持的类型: {filing_type}")
@@ -210,6 +238,9 @@ def preprocess_ticker(
                 if verbose:
                     print(f"  ⚠️ 未找到 {filing_type}")
                 continue
+
+            # 使用实际获取到的类型
+            filing_type = actual_type
 
             if verbose:
                 print(f"  ✓ 找到: {filing.get('filing_date')} ({filing.get('accession_number')})")
@@ -278,7 +309,7 @@ def preprocess_ticker(
                                 print(f"    ✓ {section_name} → {md_path.name} ({compressed_len:,} bytes)")
 
             # 获取财务快照
-            if filing_type in ["10-K", "10-Q"]:
+            if filing_type in ["10-K", "10-Q", "S-1", "424B4", "424B3", "424B2", "424B1", "S-1/A"]:
                 if verbose:
                     print(f"  📊 获取财务数据...")
                 try:
