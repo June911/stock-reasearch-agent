@@ -62,6 +62,17 @@ class SECTools:
         """Fetch the latest proxy statement (DEF 14A)."""
         return self._get_latest_filing(ticker, ["DEF 14A"])
 
+    def get_latest_s1(self, ticker: str) -> Optional[Dict[str, Any]]:
+        """Fetch the latest S-1/424B prospectus (IPO filing).
+
+        424B4 is the final prospectus, S-1 is the registration statement.
+        For recently IPO'd companies, this contains the most comprehensive
+        business description, risk factors, and financial information.
+        """
+        return self._get_latest_filing(
+            ticker, ["424B4", "424B3", "424B2", "424B1", "S-1", "S-1/A"]
+        )
+
     def extract_sec_sections(
         self, file_path: str, sections: Optional[List[str]] = None
     ) -> Dict[str, Any]:

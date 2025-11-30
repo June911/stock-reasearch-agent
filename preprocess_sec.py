@@ -112,7 +112,13 @@ def compress_section_content(content: str, section_name: str) -> str:
         current_len = 0
 
         for para in paragraphs:
+            # 如果当前段落加上已有内容超过限制
             if current_len + len(para) + 2 > max_chars:
+                # 如果还没有任何内容，至少保留部分第一段
+                if current_len == 0:
+                    remaining = max_chars - 100  # 留空间给截断说明
+                    truncated.append(para[:remaining] + "...")
+                    current_len = remaining
                 # 添加截断说明
                 truncated.append(f"\n\n[... 内容已压缩，原文 {original_len:,} 字符 → {current_len:,} 字符 ...]")
                 break
