@@ -180,6 +180,37 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
     },
+    # ==================== Summary Agent ====================
+    "summary": {
+        "prompt_file": "summary_agent.txt",
+        "tools": ["Read", "Write", "Glob"],
+        "task_template": (
+            "综合 {ticker} 的知识库和观点分析，生成投资备忘录。\n"
+            "**重要**：文件路径已明确指定，请直接使用 Read 工具依次读取以下 7 个文件，无需使用 Glob 搜索：\n"
+            "1. files/{ticker}/notes/business-model/business_model.md\n"
+            "2. files/{ticker}/notes/industry/layer3_judgment.md\n"
+            "3. files/{ticker}/notes/deep-history/evolution_analysis.md\n"
+            "4. files/{ticker}/notes/views/view_7powers.md\n"
+            "5. files/{ticker}/notes/views/view_order.md\n"
+            "6. files/{ticker}/notes/views/view_ecology.md\n"
+            "7. files/{ticker}/notes/views/view_genesis.md\n\n"
+            "交叉验证各来源的结论，识别共识和分歧。\n"
+            "输出控制在 150 行以内，保存到 files/{ticker}/notes/investment_memo.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
+    # ==================== Challenge Agent ====================
+    "challenge": {
+        "prompt_file": "challenge_agent.txt",
+        "tools": ["Read", "Write", "Glob"],
+        "task_template": (
+            "**重要**：文件路径已明确指定，请直接使用 Read 工具读取 {ticker} 的投资备忘录 files/{ticker}/notes/investment_memo.md，无需使用 Glob 搜索。\n"
+            "运用圆桌思想家框架对其核心结论发起深度挑战与讨论。\n"
+            "重点审视：前提假设、逻辑链条、核心矛盾、潜在盲点。\n"
+            "输出保存到 files/{ticker}/notes/investment_memo_challenge.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
 }
 
 
@@ -192,9 +223,9 @@ def write_session_notes(
     session_dir: Path,
     transcript_file: Path,
 ):
-    """Persist a copy of the session transcript into files/{ticker}/notes."""
-    notes_dir = base_dir / "notes"
-    notes_dir.mkdir(parents=True, exist_ok=True)
+    """Persist a copy of the session transcript into files/{ticker}/logs."""
+    logs_dir = base_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     session_name = session_dir.name
     timestamp_label = (
@@ -203,7 +234,7 @@ def write_session_notes(
         else datetime.now().strftime("%Y%m%d_%H%M%S")
     )
 
-    note_path = notes_dir / f"{agent_key}_{timestamp_label}.md"
+    note_path = logs_dir / f"{agent_key}_{timestamp_label}.md"
 
     try:
         transcript_text = transcript_file.read_text(encoding="utf-8")
@@ -227,7 +258,7 @@ def write_session_notes(
     )
 
     note_path.write_text(content, encoding="utf-8")
-    print(f"Notes saved to {note_path.resolve()}")
+    print(f"Session log saved to {note_path.resolve()}")
 
 
 def load_prompt(filename: str) -> str:
@@ -301,6 +332,7 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
     prompt = load_prompt(config["prompt_file"])
     # Replace {TICKER} placeholder with ticker
     prompt = prompt.replace("{TICKER}", ticker)
+    prompt = prompt.replace("{DATE}", datetime.now().strftime("%Y年%m月"))
     # For deep-industrial agent, don't replace {INDUSTRY} - let agent identify it
     if agent_key != "deep-industrial":
         prompt = prompt.replace("{INDUSTRY}", ticker)
@@ -365,9 +397,14 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
                     result_msg = msg
                 elif msg_type == "ContentBlockDelta":
                     # Streaming text delta
-                    if hasattr(msg, 'delta') and hasattr(msg.delta, 'text'):
+                    if hasattr(msg, "delta") and hasattr(msg.delta, "text"):
                         print(msg.delta.text, end="", flush=True)
-                elif msg_type not in ("ContentBlockStart", "ContentBlockStop", "MessageStart", "MessageStop"):
+                elif msg_type not in (
+                    "ContentBlockStart",
+                    "ContentBlockStop",
+                    "MessageStart",
+                    "MessageStop",
+                ):
                     # Debug: show unknown message types
                     print(f"\n[DEBUG] Unknown msg type: {msg_type}", flush=True)
 

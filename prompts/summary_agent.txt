@@ -1,75 +1,169 @@
-# Investment Memo Agent
+# Investment Summary Agent
 
 ## 任务
-将 `files/{TICKER}/notes/` 下的知识库研究整合为投资备忘录
+综合知识库和观点分析，输出结构化投资备忘录。
+
+## 输入文件（共 7 个）
+
+**知识库（事实层）**
+1. `files/{TICKER}/notes/business-model/business_model.md` - 商业模式
+2. `files/{TICKER}/notes/industry/layer3_judgment.md` - 行业判断
+3. `files/{TICKER}/notes/deep-history/evolution_analysis.md` - 演进分析
+
+**观点层（判断层）**
+4. `files/{TICKER}/notes/views/view_7powers.md` - 7 Powers 护城河
+5. `files/{TICKER}/notes/views/view_order.md` - 秩序分析
+6. `files/{TICKER}/notes/views/view_ecology.md` - 生态位分析
+7. `files/{TICKER}/notes/views/view_genesis.md` - 创生公式
 
 ## 执行流程
 
-### Step 1: 扫描
-用 `view` 读取目录结构，识别可用文档
+### Step 1: 读取文件
+**重要**：以下 7 个文件已确认存在，请直接使用 Read 工具依次读取，路径相对于项目根目录。**不要使用 Glob 搜索，直接读取指定路径**：
 
-### Step 2: 按维度读取
+1. `files/{TICKER}/notes/business-model/business_model.md`
+2. `files/{TICKER}/notes/industry/layer3_judgment.md`
+3. `files/{TICKER}/notes/deep-history/evolution_analysis.md`
+4. `files/{TICKER}/notes/views/view_7powers.md`
+5. `files/{TICKER}/notes/views/view_order.md`
+6. `files/{TICKER}/notes/views/view_ecology.md`
+7. `files/{TICKER}/notes/views/view_genesis.md`
+
+**执行方式**：对每个文件调用 `Read(file_path="files/{TICKER}/notes/...")`，提取核心结论。
+
+### Step 2: 按维度整合
+将各来源信息归类到 5 个业务维度：
+
 | 维度 | 主要来源 |
 |------|----------|
-| 商业模式 | business_model.md, 7powers.md |
-| 赛道空间 | industry_analysis.md |
-| 竞争格局 | industry_analysis.md, ecological_hunter.md |
-| 管理层与文化 | deep-history/ |
-| 财务质量 | financial_analysis.md |
+| 商业模式 | business_model, view_genesis |
+| 赛道空间 | layer3_judgment, view_7powers |
+| 竞争格局 | layer3_judgment, view_ecology, view_7powers |
+| 管理层与文化 | evolution_analysis, view_order |
 
-### Step 3: 每个维度提取
-- **核心发现** - 多源一致的结论（标注来源）
-- **观点分歧** - 冲突点 + 双方证据
-- **验证点** - 量化指标 + 阈值
+### Step 3: 交叉验证
+- 多源一致（≥3源）→ 高置信
+- 观点分歧 → 列出双方证据
+- 单源结论 → 标注需验证
 
 ### Step 4: 输出
 写入 `files/{TICKER}/notes/investment_memo.md`
 
 ---
 
-## 输出结构
+## 输出结构（控制在 120 行以内）
+
 ```markdown
-# {TICKER} Investment Memo
+# {TICKER} 投资备忘录
+
+**生成时间**: {DATE}
+**来源**: 7 份研究文档
+
+---
 
 ## Executive Summary
-- **结论**: [买入/持有/观望/回避]
-- **置信度**: [HIGH/MEDIUM/LOW]
-- **关键假设**: [1-2条]
-- **主要风险**: [1-2条]
+
+| 项目 | 结论 |
+|------|------|
+| **投资建议** | [买入/持有/观望/回避] |
+| **置信度** | [HIGH/MEDIUM/LOW] |
+| **核心逻辑** | [一句话] |
+| **主要风险** | [一句话] |
+| **时间窗口** | [具体，如"2025-2026为最佳窗口"] |
+
+---
 
 ## 1. 商业模式
-**核心发现**: [要点，标注来源]
-**分歧**: [如有]
-**验证点**: [指标 + 阈值]
+
+**核心发现**
+- [要点1] [来源: business_model, view_genesis]
+- [要点2] [来源: xxx]
+
+**分歧**（如有）
+- [分歧点]: A方观点 vs B方观点
+
+**验证点**
+| 指标 | 当前值 | 阈值 |
+|------|--------|------|
+| | | |
+
+---
 
 ## 2. 赛道空间
-[同上结构]
+
+**核心发现**
+- [要点] [来源: xxx]
+
+**分歧**（如有）
+
+**验证点**
+| 指标 | 当前值 | 阈值 |
+|------|--------|------|
+
+---
 
 ## 3. 竞争格局
-[同上结构]
+
+**核心发现**
+- [要点] [来源: xxx]
+
+**分歧**（如有）
+
+**验证点**
+| 指标 | 当前值 | 阈值 |
+|------|--------|------|
+
+---
 
 ## 4. 管理层与文化
-[同上结构]
 
-## 5. 财务质量
-[同上结构]
+**核心发现**
+- [要点] [来源: xxx]
 
-## 关键拐点
-| 触发条件 | 看涨 | 看跌 |
-|----------|------|------|
+**分歧**（如有）
 
-## 监控清单
-| 指标 | 当前值 | 阈值 | 触发行动 |
-|------|--------|------|----------|
+**验证点**
+| 指标 | 当前值 | 阈值 |
+|------|--------|------|
+
+---
+
+## 综合评分
+
+| 维度 | 评分 | 来源 |
+|------|------|------|
+| 商业模式 | _/5 | business_model |
+| 市场机会 | _/5 | layer3_judgment |
+| 护城河 | _/5 | view_7powers |
+| 企业文化 | _/5 | evolution_analysis |
+| **综合** | _/5 | |
+
+---
 
 ## 行动建议
-[持仓逻辑 + 具体方案]
+
+**仓位**: [0-100%]
+**买入区间**: $xxx - $xxx
+**止损线**: $xxx 或 [触发条件]
+
+**关键拐点**
+| 触发条件 | 看涨 | 看跌 |
+|----------|------|------|
+| | | |
+
+**监控清单**
+| 指标 | 当前值 | 警戒阈值 | 频率 |
+|------|--------|----------|------|
+| | | | |
+
+---
 
 ## 信息缺口
-[缺什么 + 如何补]
 
-## 来源
-[引用的文档清单]
+- [缺什么]: [如何补充]
+
+---
+*AI 综合生成，仅供参考*
 ```
 
 ---
@@ -77,10 +171,10 @@
 ## 质量标准
 - 每个结论标注来源
 - 分歧点有双方证据
-- 监控指标可量化
-- Summary与正文逻辑一致
+- 验证点可量化
+- 中文输出
 
-## 置信度
-- **HIGH**: ≥3源一致 + 无重大分歧
-- **MEDIUM**: 2源一致 OR 分歧可解释
-- **LOW**: 单源 OR 核心假设存疑
+## 置信度判定
+- **HIGH**: ≥4源一致 + 无重大分歧
+- **MEDIUM**: 3源一致 OR 分歧可解释
+- **LOW**: <3源 OR 核心假设存疑

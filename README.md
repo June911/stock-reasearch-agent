@@ -1,462 +1,238 @@
-# 🏦 Stock Research Agent
+# Stock Research Agent
 
-A multi-agent stock research system powered by Claude Agent SDK that generates comprehensive Investment Memos for any public company.
+基于 Claude Agent SDK 的多层股票研究系统，通过专业化 AI agents 协作生成深度投资备忘录。
 
-## 📋 Overview
-
-This system orchestrates specialized AI agents to research public companies across three dimensions:
-
-1. **Company History** - Founding story, product evolution, key milestones
-2. **Business Model** - Revenue streams, competitive advantages, market position
-3. **Organization** - Leadership team, board composition, ownership structure
-
-The research is synthesized into a professional Investment Memo following standard institutional investor format.
-
-## 🏗️ Architecture
+## 架构概览
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Lead Agent (Coordinator)                  │
-│  - Receives ticker symbol (e.g., "NVDA")                    │
-│  - Spawns 3 researchers in parallel                         │
-│  - Waits for completion                                     │
-│  - Spawns report writer                                     │
-└─────────────────────────────────────────────────────────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
-│ History          │ │ Business     │ │ Organization     │
-│ Researcher       │ │ Researcher   │ │ Researcher       │
-│                  │ │              │ │                  │
-│ - WebSearch      │ │ - WebSearch  │ │ - WebSearch      │
-│ - Write          │ │ - Write      │ │ - Write          │
-└──────────────────┘ └──────────────┘ └──────────────────┘
-          │                │                │
-          └────────────────┼────────────────┘
-                           ▼
-                 files/TICKER/
-                 - notes/history.md
-                 - notes/business.md
-                 - notes/organization.md
-                           │
-                           ▼
-                ┌──────────────────────┐
-                │ Report Writer        │
-                │                      │
-                │ - Read research      │
-                │ - Synthesize         │
-                │ - Write memo         │
-                └──────────────────────┘
-                           │
-                           ▼
-                 files/TICKER/
-                 - report.md
+┌─────────────────────────────────────────────────────────────────┐
+│                     Layer 0: 数据预处理                          │
+│                 SEC filings → 结构化 raw/*.md                    │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     Layer 1: 知识构建                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ deep-history │  │ deep-business│  │deep-industrial│          │
+│  │   演进分析    │  │   商业模式   │  │   行业判断    │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     Layer 2: 观点生成                            │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐       │
+│  │view-7powers│ │view-order │ │view-ecology│ │view-genesis│      │
+│  │   护城河   │ │    秩序   │ │   生态位   │ │  创生公式  │       │
+│  └───────────┘ └───────────┘ └───────────┘ └───────────┘       │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     Layer 3: 综合输出                            │
+│            ┌──────────┐           ┌───────────┐                 │
+│            │ summary  │     →     │ challenge │                 │
+│            │ 投资备忘录│           │  挑战分析  │                 │
+│            └──────────┘           └───────────┘                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## 快速开始
 
-### Prerequisites
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- Anthropic API key ([get one here](https://console.anthropic.com/settings/keys))
-
-### Installation
-
-1. **Install uv (if not already installed):**
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-2. **Clone the repository:**
-   ```bash
-   git clone <repo-url>
-   cd stock-research-agent
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   uv sync
-   ```
-
-   Or with pip (slower):
-   ```bash
-   pip install -e .
-   ```
-
-4. **Set up environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your ANTHROPIC_API_KEY
-   ```
-
-### Usage
-
-**Option 1: Quick Start Script (Recommended)**
+### 环境配置
 
 ```bash
-./run.sh
+# 安装依赖
+uv sync
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 添加 ANTHROPIC_API_KEY 和 SEC_CONTACT
 ```
 
-This script will:
-- Check if uv is installed
-- Set up .env file if needed
-- Install dependencies
-- Run the agent
-
-**Option 2: Manual Run**
+### 运行 Agent
 
 ```bash
-uv run python main.py
+# 运行单个 agent
+uv run python single_agent.py --agent <agent-name> --ticker <TICKER> --model <model>
+
+# 示例：运行深度商业模式分析
+uv run python single_agent.py --agent deep-business --ticker NVDA --model sonnet
 ```
 
-**Option 3: Activate Virtual Environment**
+## Agent 清单
+
+### Layer 1: 知识构建 Agents
+
+| Agent | 说明 | 输入 | 输出 |
+|-------|------|------|------|
+| `deep-history` | 深度历史研究 | SEC raw + WebSearch | `notes/deep-history/evolution_analysis.md` |
+| `deep-business` | 商业模式分析 | SEC raw + WebSearch | `notes/business-model/business_model.md` |
+| `deep-industrial` | 行业深度研究 | WebSearch | `notes/industry/layer3_judgment.md` |
+
+### Layer 2: 观点生成 Agents
+
+| Agent | 框架 | 输入文件 | 输出 |
+|-------|------|----------|------|
+| `view-7powers` | Hamilton Helmer 7 Powers | business_model + layer3 | `notes/views/view_7powers.md` |
+| `view-genesis` | 创生公式 | business_model + layer3 | `notes/views/view_genesis.md` |
+| `view-order` | 秩序分析 | business_model + evolution + layer3 | `notes/views/view_order.md` |
+| `view-ecology` | 生态位猎手 | business_model + evolution + layer3 | `notes/views/view_ecology.md` |
+
+### Layer 3: 综合输出 Agents
+
+| Agent | 说明 | 输入 | 输出 |
+|-------|------|------|------|
+| `summary` | 投资备忘录生成 | 全部 7 个知识/观点文件 | `notes/investment_memo.md` |
+| `challenge` | 圆桌思想家挑战 | investment_memo | `notes/investment_memo_challenge.md` |
+
+## 完整研究流程
+
+### 推荐执行顺序
 
 ```bash
-source .venv/bin/activate  # On Unix/macOS
-# OR
-.venv\Scripts\activate     # On Windows
-python main.py
+TICKER=NVDA
+MODEL=sonnet
+
+# Layer 1: 知识构建（可并行）
+uv run python single_agent.py --agent deep-history --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent deep-business --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent deep-industrial --ticker $TICKER --model $MODEL
+
+# Layer 2: 观点生成（可并行）
+uv run python single_agent.py --agent view-7powers --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent view-genesis --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent view-order --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent view-ecology --ticker $TICKER --model $MODEL
+
+# Layer 3: 综合输出（顺序执行）
+uv run python single_agent.py --agent summary --ticker $TICKER --model $MODEL
+uv run python single_agent.py --agent challenge --ticker $TICKER --model $MODEL
 ```
 
-Enter a ticker symbol when prompted:
+### 数据依赖关系
+
 ```
-Enter ticker symbol (e.g., NVDA, AAPL): NVDA
+SEC filings (10-K, 10-Q, DEF 14A)
+        │
+        ↓ 自动预处理
+    _index.json + raw/*.md
+        │
+        ├──────────────────────────────────┐
+        ↓                                  ↓
+   deep-history                      deep-business
+   → evolution_analysis.md           → business_model.md
+        │                                  │
+        │      deep-industrial             │
+        │      → layer3_judgment.md        │
+        │              │                   │
+        ↓              ↓                   ↓
+   ┌─────────────────────────────────────────────┐
+   │              View Agents                     │
+   │  view-7powers  ← business_model + layer3    │
+   │  view-genesis  ← business_model + layer3    │
+   │  view-order    ← all three                  │
+   │  view-ecology  ← all three                  │
+   └─────────────────────────────────────────────┘
+                       │
+                       ↓
+                   summary
+               → investment_memo.md
+                       │
+                       ↓
+                   challenge
+            → investment_memo_challenge.md
 ```
 
-The system will:
-1. Spawn 3 researchers in parallel
-2. Each researcher uses WebSearch 5-10 times to gather information
-3. Save research notes to `files/NVDA/notes/`
-4. Spawn report writer to synthesize findings
-5. Generate Investment Memo at `files/NVDA/report.md`
-
-## 📁 Directory Structure
+## 目录结构
 
 ```
 stock-research-agent/
-├── main.py                  # Entry point
-├── prompts/                 # Agent system prompts
-│   ├── lead_agent.txt       # Coordinator logic
-│   ├── history_researcher.txt
-│   ├── business_researcher.txt
-│   ├── org_researcher.txt
-│   └── report_writer.txt
-├── utils/                   # Utility modules
-│   ├── subagent_tracker.py  # Tracks tool calls with hooks
-│   ├── message_handler.py   # Processes agent messages
-│   └── transcript.py        # Session logging
-├── tools/                   # Additional tools
-│   └── sec_tools.py         # SEC Edgar integration helpers
-├── files/                   # Output directories (one subfolder per ticker)
-│   └── <TICKER>/            # e.g., files/NVDA/
-│       ├── report.md        # Final Investment Memo
-│       └── notes/           # Intermediate research
-│           ├── history.md
-│           ├── business.md
-│           └── organization.md
-└── logs/                    # Session transcripts
-    └── session_YYYYMMDD_HHMMSS/
-        ├── transcript.txt   # Human-readable log
-        └── tool_calls.jsonl # Structured tool call log
+├── single_agent.py          # 单 agent 运行入口
+├── preprocess_sec.py        # SEC 文件预处理
+├── prompts/                 # Agent 系统提示词
+│   ├── deep_history_researcher.txt
+│   ├── deep_business_researcher.txt
+│   ├── deep_industrial_researcher.txt
+│   ├── summary_agent.txt
+│   ├── challenge_agent.txt
+│   └── view/                # 观点框架提示词
+│       ├── 观点_7powers.md
+│       ├── 观点_秩序.md
+│       ├── 观点_生态猎手.md
+│       └── 观点_创生公式.md
+├── tools/                   # 工具模块
+│   └── sec_agent_tool.py    # SEC Edgar API 集成
+├── utils/                   # 工具函数
+│   ├── subagent_tracker.py
+│   ├── message_handler.py
+│   └── transcript.py
+├── files/                   # 研究输出（按 ticker 组织）
+│   └── <TICKER>/
+│       ├── _index.json      # SEC 文件索引
+│       ├── raw/             # 预处理后的 SEC 内容
+│       ├── filings/         # 原始 SEC 文件
+│       ├── notes/           # 研究笔记
+│       │   ├── deep-history/
+│       │   ├── business-model/
+│       │   ├── industry/
+│       │   ├── views/
+│       │   ├── investment_memo.md
+│       │   └── investment_memo_challenge.md
+│       └── logs/            # 会话记录
+└── logs/                    # 全局会话日志
 ```
 
-## 📊 Investment Memo Structure
+## 设计理念
 
-Generated memos follow this format:
+### 1. 知识与观点分离
 
-```markdown
-# Investment Memo: COMPANY (TICKER)
+- **Layer 1** 只产出事实（发生了什么、如何运作）
+- **Layer 2** 基于事实生成判断（所以呢）
 
-## Executive Summary
-[2-3 paragraph synthesis of key points]
+### 2. 多视角交叉验证
 
-## Investment Thesis
-[Core bull case and opportunity]
+- 4 个 View agents 从不同投资框架分析同一家公司
+- Summary 识别多源共识（≥3 源一致）和分歧点
 
-## Company Overview
-- Founding & Evolution
-- Business Model
-- Competitive Position
+### 3. 批判性闭环
 
-## Financial Analysis
-- Revenue & Growth
-- Profitability & Returns
-- Business Quality
+- Challenge agent 对最终结论发起系统性挑战
+- 暴露隐性假设、逻辑漏洞和认知盲点
 
-## Management & Governance
-- Leadership Team
-- Board & Governance
-- Ownership & Alignment
+## SEC Edgar 集成
 
-## Investment Framework
-- Bull Case (5 points)
-- Bear Case (5 points)
-- Key Risks (3-5 risks)
+系统自动从 SEC Edgar 获取并预处理公司文件：
 
-## Conclusion
-- Investment Recommendation
-- Key Monitoring Points
+- **10-K**: 年度报告（业务描述、风险因素、财务数据）
+- **10-Q**: 季度报告（最新财务状况）
+- **DEF 14A**: 代理声明（高管薪酬、股权结构）
 
-## Sources
-[All sources from research notes]
-```
-
-## 🔧 Key Features
-
-### 1. Parallel Execution
-- All 3 researchers run simultaneously for speed
-- Coordination handled by lead agent
-
-### 2. Comprehensive Tracking
-- `SubagentTracker` uses hooks to monitor all tool calls
-- PreToolUse hook: Captures tool invocations
-- PostToolUse hook: Captures tool results
-- Logs saved to `logs/session_*/tool_calls.jsonl`
-
-### 3. Research Quality Controls
-- Each researcher must use WebSearch 5-10 times
-- All claims must be sourced from WebSearch results
-- No reliance on LLM training data
-- Specific numbers, dates, and URLs required
-
-### 4. File System as Memory
-- `files/<TICKER>/notes/` stores intermediate research
-- `files/<TICKER>/report.md` stores final Investment Memos
-- Markdown format for easy reading and version control
-
-## 🎯 Agent Responsibilities
-···
-| Agent | Tools | Purpose |
-|-------|-------|---------|
-| Lead Agent | Task | Orchestrates workflow, spawns subagents |
-| History Researcher | WebSearch, Write, SEC Tools | Company founding, product evolution, milestones, IPO details (uses SEC API for exact dates/financials) |
-| Business Researcher | WebSearch, Write | Revenue model, moats, competitive position |
-| Org Researcher | WebSearch, Write | Leadership, board, ownership, compensation |
-| Report Writer | Glob, Read, Write | Synthesizes research into Investment Memo |
-
-**Note:** History Researcher now integrates with SEC Edgar API to fetch exact IPO dates, filing URLs, and financial metrics directly from 10-K/10-Q filings, complementing WebSearch results with authoritative data.
-
-## 🔍 Example Output
-
-**Input:** `NVDA`
-
-**Research Notes Generated:**
-- `files/NVDA/notes/history.md` (4-5 paragraphs)
-- `files/NVDA/notes/business.md` (4-5 paragraphs)
-- `files/NVDA/notes/organization.md` (4-5 paragraphs)
-
-**Investment Memo Generated:**
-- `files/NVDA/report.md` (1500-2500 words)
-  - Executive Summary
-  - Investment Thesis
-  - Company Overview (history, business, competitive position)
-  - Financial Analysis (revenue, profitability, quality)
-  - Management & Governance (leadership, board, ownership)
-  - Investment Framework (bull case, bear case, risks)
-  - Conclusion & Monitoring Points
-  - Complete Source List
-
-## 🧾 SEC Edgar Integration
-
-The `tools/sec_tools.py` module now calls the official Edgar data endpoints to
-retrieve the latest 10-K, 10-Q, and DEF 14A filings plus core XBRL metrics.
-
-### Required Environment
-
-Per SEC fair access policy you must identify yourself with a descriptive
-User-Agent and contact email:
+### 配置
 
 ```bash
-export SEC_USER_AGENT="StockResearchAgent/0.1 (research@example.com)"
-# or set a contact and optional app name:
-export SEC_CONTACT="research@example.com"
-export SEC_APP_NAME="StockResearchAgent"
+# .env 文件
+SEC_CONTACT=your-email@example.com
+SEC_APP_NAME=StockResearchAgent
+SEC_REQUEST_DELAY=0.2  # 请求间隔（秒）
 ```
 
-Optional knobs:
+## 成本参考
 
-- `SEC_REQUEST_DELAY` (default `0.2` seconds) throttles requests.
+| Agent 类型 | 模型 | 典型耗时 | 典型成本 |
+|-----------|------|---------|---------|
+| Layer 1 (知识) | sonnet | 5-10 min | $0.3-0.8 |
+| Layer 2 (观点) | sonnet | 2-5 min | $0.1-0.3 |
+| Summary | sonnet | 3-5 min | $0.2-0.4 |
+| Challenge | sonnet | 3-5 min | $0.2-0.3 |
+| **完整流程** | sonnet | **30-60 min** | **$2-5** |
 
-### Example Usage
+## 免责声明
 
-```python
-from tools.sec_tools import SECTools
+本工具仅供信息和教育目的。生成的投资备忘录不构成投资建议。投资决策前请进行独立研究并咨询专业人士。
 
-sec = SECTools()
-ten_k = sec.get_latest_10k("NVDA")
-financials = sec.extract_financial_tables(ten_k["url"])
-print(ten_k["url"])
-print(financials["income_statement"]["total_revenue"])
-```
+## License
 
-The helper automatically:
-
-- Maps tickers → CIKs via SEC reference data (cached for 24h under `tools/.sec_cache`)
-- Calls `data.sec.gov/submissions` for filing metadata
-- Calls `data.sec.gov/api/xbrl/companyfacts` for normalized metrics
-- Saves each downloaded filing to `files/<TICKER>/filings/<ACCESSION>/` with metadata for reuse
-- Returns structured snapshots ready for downstream analysis
-
-### Integrated into History Researcher
-
-**The History Researcher agent now automatically uses SEC tools!**
-
-When researching company history, it:
-1. **First** calls `get_company_filings(ticker)` to get exact filing dates and URLs
-2. **Optionally** calls `get_financial_snapshot(ticker)` for revenue/profitability history
-3. **Then** uses WebSearch for narrative context and founder stories
-4. **Combines** SEC hard data (dates, numbers) with WebSearch narratives
-
-This ensures:
-- **Exact IPO dates** from actual S-1 filings
-- **Precise financial milestones** from 10-K/10-Q reports
-- **Official business descriptions** from SEC filings
-- **Authoritative sources** cited in research notes
-
-No additional configuration needed - just set `SEC_CONTACT` in your `.env` file!
-
-## 📈 Future Enhancements
-
-### SEC Filing Enhancements
-Future iterations can build on the live Edgar integration to:
-- Parse MD&A sections with NLP
-- Extract detailed tables (segment revenue, compensation, proposals)
-- Support additional forms (8-K, S-1) and historical ranges
-
-### Additional Researchers
-Consider adding:
-- **Valuation Researcher**: DCF models, comps, precedent transactions
-- **Technical Researcher**: Chart patterns, momentum indicators
-- **Sentiment Researcher**: News sentiment, social media, analyst ratings
-- **ESG Researcher**: Environmental, Social, Governance factors
-
-### Advanced Features
-- Comparative analysis (multiple companies)
-- Time-series analysis (tracking company changes over time)
-- Portfolio-level analysis
-- Alert system for monitoring points
-
-## 💻 Development
-
-### Why uv?
-
-This project uses [uv](https://docs.astral.sh/uv/) for dependency management because it's:
-- **10-100x faster** than pip
-- **Deterministic** - generates `uv.lock` for reproducible installs
-- **Compatible** - works with standard `pyproject.toml`
-- **Modern** - built in Rust with best practices
-
-### Development Workflow
-
-Install dev dependencies:
-```bash
-uv sync --all-extras
-```
-
-Run tests:
-```bash
-uv run pytest
-```
-
-Format code:
-```bash
-uv run black .
-uv run ruff check .
-```
-
-Add a new dependency:
-```bash
-uv add <package-name>
-```
-
-### Testing Individual Agents
-
-The `single_agent.py` script allows you to run individual researchers without the lead coordinator for testing:
-
-```bash
-# Test history researcher
-python single_agent.py --agent history --ticker NVDA
-
-# Test business researcher
-python single_agent.py --agent business --ticker AAPL
-
-# Test organization researcher
-python single_agent.py --agent organization --ticker TSLA
-
-# Test report writer (requires research notes already exist)
-python single_agent.py --agent report --ticker NVDA
-
-# Use different model
-python single_agent.py --agent history --ticker NVDA --model sonnet
-
-# Custom instruction
-python single_agent.py --agent history --ticker NVDA --instruction "Focus only on the founding story"
-```
-
-This is useful for:
-- Debugging individual agent prompts
-- Testing changes without running the full pipeline
-- Generating partial research for specific companies
-- Experimenting with different models
-
-## 🛠️ Customization
-
-### Modify Agent Behavior
-Edit prompt files in `prompts/` directory:
-- Change research focus areas
-- Adjust output formats
-- Modify quality standards
-- Add new instructions
-
-### Add New Agents
-1. Create new prompt file: `prompts/new_agent.txt`
-2. Add AgentDefinition in `main.py`:
-   ```python
-   agents = {
-       "new-agent": AgentDefinition(
-           description="...",
-           tools=["WebSearch", "Write"],
-           prompt=load_prompt("new_agent.txt"),
-           model="haiku"
-       )
-   }
-   ```
-3. Update lead agent to spawn new agent
-
-### Adjust Models
-Change model in AgentDefinition:
-- `"haiku"` - Fast, cost-effective (default)
-- `"sonnet"` - Balanced performance
-- `"opus"` - Highest quality
-
-## 📝 Notes
-
-- **Web Search Dependency**: Researchers require WebSearch for all information
-- **Token Usage**: Haiku model keeps costs low (~$0.25-0.50 per full analysis)
-- **Time**: Full analysis takes 2-5 minutes depending on parallel execution
-- **Accuracy**: Quality depends on WebSearch results and source availability
-
-## ⚠️ Disclaimer
-
-This tool is for informational and educational purposes only. The generated Investment Memos do not constitute investment advice, financial advice, trading advice, or any other sort of advice. Always conduct your own due diligence and consult with qualified financial professionals before making investment decisions.
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
-## 📧 Contact
-
-For questions or issues, please open a GitHub issue.
+MIT License
 
 ---
 
-**Built with [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk) by Anthropic**
+**Built with [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk)**

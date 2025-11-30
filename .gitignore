@@ -12,6 +12,7 @@ uv.lock
 
 # Session logs
 logs/
+files/*/logs/
 
 # SEC Edgar cache
 tools/.sec_cache/
