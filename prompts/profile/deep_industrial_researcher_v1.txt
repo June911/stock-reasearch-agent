@@ -3,7 +3,10 @@
 
 **目标**：回答一个核心问题 —— **要不要在这个赛道找机会？找什么样的机会？**
 
-**⚠️ 语言要求：所有输出文件必须使用中文撰写。**
+**⚠️ 重要**：
+- 所有输出使用中文
+- 数据必须标注来源
+- 趋势判断需说明依据
 
 ---
 
@@ -13,25 +16,10 @@
 2. **WebSearch 补时效** - 最新数据（规模、份额、渗透率、政策）用搜索
 3. **分层写文件** - 每层完成后立即写入，避免 context 膨胀
 4. **决策导向** - 不是做百科全书，而是支撑投资决策
-5. **禁止 spawn 子 agent** - 所有操作自己完成
 
 ---
 
-## 方法论：Pre-Phase + 3 层递进
-
-### Pre-Phase：识别行业（如果输入是 TICKER）
-
-**如果输入是股票代码（如 NVDA）而非行业名称**，必须先识别对应的行业/赛道：
-
-**执行步骤**：
-1. 使用 WebSearch 查询 `{TICKER} industry sector business`
-2. 识别主要业务所在的行业（如：AI芯片、电动汽车、SaaS医疗软件）
-3. 确定行业名称用于研究内容
-4. 如果公司跨多个行业，选择最主要的业务线
-
-**输出**：确定行业名称（用于研究内容），文件路径使用 `files/{TICKER}/notes/`
-
----
+## 方法论：3 层递进
 
 ### 第 1 层：赛道画像（回答「是什么」）
 
@@ -68,7 +56,7 @@
 - 模型知识：行业定义、产业链结构、竞争格局框架
 - WebSearch：最新市场规模、渗透率、市场份额数据
 
-**输出**：`files/{TICKER}/notes/industry/layer1_landscape.md`（写入后再进入下一层）
+**输出**：`files/{TRACK}/notes/track-analysis/layer1_landscape.md`
 
 ---
 
@@ -104,7 +92,7 @@
 - 周期性：强周期/弱周期/非周期？当前在周期什么位置？
 - 政策影响：监管态度如何？政策变化如何改变竞争格局？
 
-**输出**：`files/{TICKER}/notes/industry/layer2_mechanism.md`（写入后再进入下一层）
+**输出**：`files/{TRACK}/notes/track-analysis/layer2_mechanism.md`
 
 ---
 
@@ -149,9 +137,9 @@
 **7. 投资启示**
 - 值得投资吗？核心理由？
 - 什么类型的公司值得关注？
-- 需要持续监控什么指标？
+- 需要持续监控什么？
 
-**输出**：`files/{TICKER}/notes/industry/layer3_judgment.md`
+**输出**：`files/{TRACK}/notes/track-analysis/layer3_judgment.md`
 
 ---
 
@@ -160,30 +148,27 @@
 | 工具 | 用途 |
 |------|------|
 | **WebSearch** | 补充时效性数据 |
-| **Read** | 读取前序层文件、已有公司分析 |
-| **Glob** | 查找文件 |
+| **Read** | 读取已有公司分析文件（如有） |
 | **Write** | 每层完成后立即写入 |
 
 ---
 
-## 输出文件（只允许这 3 个）
+## 引用原则
 
-**⚠️ 路径说明**：所有路径都是**相对于当前工作目录**的相对路径，不要使用 `~` 或绝对路径。
+**数据标来源，判断说依据。** 格式不限。
 
-```
-files/{TICKER}/notes/industry/
-├── layer1_landscape.md   # 第 1 层：赛道画像
-├── layer2_mechanism.md   # 第 2 层：运行机制
-└── layer3_judgment.md    # 第 3 层：投资判断
-```
+---
 
-**严禁创建任何其他文件**：
-- ❌ README.md / INDEX.md / SUMMARY.md / 任何总结文件
-- ❌ 任何带时间戳的文件
-- ❌ 任何临时文件或中间文件
-- ❌ 任何不在上述列表中的文件
+## 文件结构
 
-**违反此规则会导致输出无效。**
+**输出路径**：`files/{TRACK}/notes/track-analysis/`
+
+**输出文件**：
+- `layer1_landscape.md` - 赛道画像
+- `layer2_mechanism.md` - 运行机制
+- `layer3_judgment.md` - 投资判断（含核心结论）
+
+**命名规则**：{TRACK} 用英文小写，如 `cloud-computing`、`ev-battery`
 
 ---
 

@@ -11,12 +11,14 @@ from claude_agent_sdk import (
     ClaudeSDKClient,
     ClaudeAgentOptions,
     HookMatcher,
+    ResultMessage,
 )
 
 from utils.message_handler import process_assistant_message
 from utils.subagent_tracker import SubagentTracker
 from utils.transcript import setup_session, TranscriptWriter
 from tools.sec_agent_tool import SECAgentTool, build_sec_mcp_server
+from preprocess_sec import preprocess_ticker
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -43,18 +45,19 @@ AGENT_PRESETS = {
             "WebSearch",
             "Write",
             "Read",
-            "get_company_filings",
+            "Glob",
             "get_financial_snapshot",
             "extract_sec_sections",
         ],
         "task_template": (
-            "Conduct comprehensive deep history research for {ticker} following the 4-phase methodology: "
-            "(1) Build SEC foundation and timeline skeleton, (2) Cross-verify facts, "
-            "(3) Investigate doubts and suspicious patterns with evidence, "
-            "(4) Synthesize into complete timeline and evolution analysis with management assessment. "
-            "Save all findings to files/{ticker}/notes/ following the required multi-file structure."
+            "对 {ticker} 进行深度历史研究，遵循 3 阶段方法论："
+            "(1) 先读取 files/{ticker}/_index.json 和 raw/*.md 预处理文件，构建时间线；"
+            "(2) 调查 2-3 个重要疑点；"
+            "(3) 综合输出完整时间线和演进分析（中文）。"
+            "所有输出保存到 files/{ticker}/notes/deep-history/。"
         ),
         "ensure_notes_dir": True,
+        "needs_preprocessing": True,
     },
     "business": {
         "prompt_file": "business_researcher.txt",
@@ -71,20 +74,18 @@ AGENT_PRESETS = {
             "WebSearch",
             "Write",
             "Read",
-            "get_company_filings",
+            "Glob",
             "get_financial_snapshot",
             "extract_sec_sections",
         ],
         "task_template": (
-            "Conduct comprehensive deep business model research for {ticker} following the 2-phase methodology: "
-            "(1) Build complete business model documentation from authoritative sources (9 modules), "
-            "(2) Test investment-critical assumptions with evidence (5 key questions). "
-            "Save all findings to files/{ticker}/notes/business-model/ following the required structure: "
-            "complete_model.md (Phase 1) and model_assessment.md (Phase 2). "
-            "IMPORTANT: Use full relative paths starting with 'files/' when calling Write tool, "
-            "e.g., 'files/{ticker}/notes/business-model/complete_model.md'. Do NOT use absolute paths."
+            "对 {ticker} 进行商业模式深度研究："
+            "(1) 先读取 files/{ticker}/_index.json 和 raw/*.md 预处理文件；"
+            "(2) 按 9 个模块分析商业模式（价值主张、产品、客户、运营、盈利、生意特性、核心能力、规模化、风险）；"
+            "(3) 输出到 files/{ticker}/notes/business-model/business_model.md（中文）。"
         ),
         "ensure_notes_dir": True,
+        "needs_preprocessing": True,
     },
     "organization": {
         "prompt_file": "org_researcher.txt",
@@ -109,18 +110,73 @@ AGENT_PRESETS = {
         "tools": [
             "WebSearch",
             "Write",
+            "Read",
+            "Glob",
         ],
         "task_template": (
-            "Conduct comprehensive deep industrial research for {ticker}. "
-            "If the input is a ticker symbol, first identify the corresponding industry/sector using WebSearch, "
-            "then follow the 2-phase methodology: "
-            "(1) Build complete industry picture and understand mechanisms (What + Why), "
-            "(2) Form investment judgment based on evidence (So What). "
-            "Save findings to files/{ticker}/notes/ (use the ticker symbol as directory name) "
-            "following the required structure: "
-            "industry_analysis.md (Phase 1) and investment_view.md (Phase 2). "
-            "IMPORTANT: Use full relative paths starting with 'files/' when calling Write tool, "
-            "e.g., 'files/{ticker}/notes/industry_analysis.md'. Do NOT use absolute paths or paths starting with '~/'."
+            "对 {ticker} 所在行业进行深度研究，遵循 3 层递进方法论："
+            "(1) 第 1 层：赛道画像（是什么）→ 输出 layer1_landscape.md；"
+            "(2) 第 2 层：运行机制（为什么）→ 输出 layer2_mechanism.md；"
+            "(3) 第 3 层：投资判断（所以呢）→ 输出 layer3_judgment.md。"
+            "所有文件保存到 files/{ticker}/notes/industry/（中文撰写）。"
+        ),
+        "ensure_notes_dir": True,
+    },
+    # ==================== View Agents ====================
+    "view-order": {
+        "prompt_file": "view/观点_秩序.md",
+        "tools": ["Read", "Write"],
+        "task_template": (
+            "基于以下 3 个关键文件对 {ticker} 进行秩序分析框架评估：\n"
+            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
+            "2. files/{ticker}/notes/deep-history/evolution_analysis.md（演进分析）\n"
+            "3. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "只读取这 3 个文件，不要读取其他文件。"
+            "识别其创生公式、权力场强度、坍塌位置和范式脆弱性，"
+            "最终给出「换还是不换」的压倒性判断。"
+            "输出保存到 files/{ticker}/notes/views/view_order.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
+    "view-7powers": {
+        "prompt_file": "view/观点_7powers.md",
+        "tools": ["Read", "Write"],
+        "task_template": (
+            "基于以下 2 个关键文件对 {ticker} 进行 7 Powers 框架评估：\n"
+            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
+            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "只读取这 2 个文件，不要读取其他文件。"
+            "严格按照 prompt 中的输出模板格式输出，不要展开详细分析。"
+            "输出保存到 files/{ticker}/notes/views/view_7powers.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
+    "view-ecology": {
+        "prompt_file": "view/观点_生态猎手.md",
+        "tools": ["Read", "Write"],
+        "task_template": (
+            "基于以下 3 个关键文件对 {ticker} 进行生态位猎手分析：\n"
+            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
+            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n"
+            "3. files/{ticker}/notes/deep-history/evolution_analysis.md（演进分析）\n\n"
+            "只读取这 3 个文件，不要读取其他文件。"
+            "解码：位置真相、价值逻辑、死亡倒计时、进化引擎，"
+            "最终回答：这是正在变强的捕食者，还是正在变肥的猎物？"
+            "输出保存到 files/{ticker}/notes/views/view_ecology.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
+    "view-genesis": {
+        "prompt_file": "view/观点_创生公式.md",
+        "tools": ["Read", "Write"],
+        "task_template": (
+            "基于以下 2 个关键文件对 {ticker} 进行「看相的艺术」分析：\n"
+            "1. files/{ticker}/notes/business-model/business_model.md（商业模式，含财务数据）\n"
+            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "只读取这 2 个文件，不要读取其他文件。"
+            "识别创生公式、评估权力场、定位新稀缺、判断认知折价，"
+            "回答这家公司是否代表「压倒性的更高品质秩序系统」。"
+            "输出保存到 files/{ticker}/notes/views/view_genesis.md（中文）。"
         ),
         "ensure_notes_dir": True,
     },
@@ -182,7 +238,12 @@ def load_prompt(filename: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a single Stock Research agent (history, deep-history, business, deep-business, organization, report, or deep-industrial)."
+        description=(
+            "Run a single Stock Research agent. "
+            "Profile agents: history, deep-history, business, deep-business, organization, deep-industrial. "
+            "View agents: view-order, view-7powers, view-ecology, view-genesis. "
+            "Synthesis: report."
+        )
     )
     parser.add_argument(
         "--agent",
@@ -215,6 +276,26 @@ def ensure_directories(ticker: str, ensure_notes_dir: bool) -> Path:
     return base_dir
 
 
+def ensure_preprocessing(ticker: str, base_dir: Path) -> bool:
+    """
+    检查并执行 SEC 文件预处理。
+
+    Returns:
+        True if preprocessing was run, False if already exists
+    """
+    index_file = base_dir / "_index.json"
+    raw_dir = base_dir / "raw"
+
+    # 检查是否已有预处理文件
+    if index_file.exists() and raw_dir.exists() and any(raw_dir.iterdir()):
+        print(f"✓ 预处理文件已存在: {base_dir}")
+        return False
+
+    print(f"\n📥 自动预处理 {ticker} 的 SEC 文件...")
+    preprocess_ticker(ticker, filing_types=["10-K", "10-Q", "DEF 14A"], verbose=True)
+    return True
+
+
 async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | None):
     config = AGENT_PRESETS[agent_key]
     prompt = load_prompt(config["prompt_file"])
@@ -224,6 +305,10 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
     if agent_key != "deep-industrial":
         prompt = prompt.replace("{INDUSTRY}", ticker)
     base_dir = ensure_directories(ticker, config["ensure_notes_dir"])
+
+    # 自动预处理 SEC 文件（如果需要）
+    if config.get("needs_preprocessing"):
+        ensure_preprocessing(ticker, base_dir)
 
     transcript_file, session_dir = setup_session()
     transcript = TranscriptWriter(transcript_file)
@@ -265,6 +350,7 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
     print(f"Instruction: {task_prompt}")
     print("=" * 70 + "\n")
 
+    result_msg = None
     try:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(prompt=task_prompt)
@@ -272,8 +358,18 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
             transcript.write("\nAgent: ", end="")
 
             async for msg in client.receive_response():
-                if type(msg).__name__ == "AssistantMessage":
+                msg_type = type(msg).__name__
+                if msg_type == "AssistantMessage":
                     process_assistant_message(msg, tracker, transcript)
+                elif isinstance(msg, ResultMessage):
+                    result_msg = msg
+                elif msg_type == "ContentBlockDelta":
+                    # Streaming text delta
+                    if hasattr(msg, 'delta') and hasattr(msg.delta, 'text'):
+                        print(msg.delta.text, end="", flush=True)
+                elif msg_type not in ("ContentBlockStart", "ContentBlockStop", "MessageStart", "MessageStop"):
+                    # Debug: show unknown message types
+                    print(f"\n[DEBUG] Unknown msg type: {msg_type}", flush=True)
 
             transcript.write("\n")
     finally:
@@ -286,6 +382,20 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
         print(f"Session logs: {session_dir}")
         print(f"  - Transcript: {transcript_file}")
         print(f"  - Tool calls: {session_dir / 'tool_calls.jsonl'}")
+
+        # Display token usage and cost
+        if result_msg:
+            print(f"\n💰 Cost & Usage:")
+            if result_msg.total_cost_usd is not None:
+                print(f"  - Total cost: ${result_msg.total_cost_usd:.4f}")
+            if result_msg.usage:
+                input_tokens = result_msg.usage.get("input_tokens", 0)
+                output_tokens = result_msg.usage.get("output_tokens", 0)
+                print(f"  - Input tokens: {input_tokens:,}")
+                print(f"  - Output tokens: {output_tokens:,}")
+                print(f"  - Total tokens: {input_tokens + output_tokens:,}")
+            print(f"  - Turns: {result_msg.num_turns}")
+            print(f"  - Duration: {result_msg.duration_ms / 1000:.1f}s")
         print("=" * 70 + "\n")
         write_session_notes(
             base_dir=base_dir,

@@ -1,0 +1,74 @@
+{
+  "ticker": "NVDA",
+  "preprocessed_at": "2025-11-30T11:22:24.199379",
+  "filings": [
+    {
+      "type": "10-K",
+      "filing_date": "2025-02-26",
+      "report_date": "2025-01-26",
+      "accession_number": "0001045810-25-000023",
+      "local_path": "/Users/june/Desktop/AI/claude/StockAnalyst/stock-research-agent/files/NVDA/filings/2025-01-26_10-K_000104581025000023/nvda-20250126.htm",
+      "extracted_sections": [
+        {
+          "section": "Item 1",
+          "file": "raw/2025-01-26_10-K/item1_business.md",
+          "size_bytes": 296
+        },
+        {
+          "section": "Item 1A",
+          "file": "raw/2025-01-26_10-K/item1a_risk_factors.md",
+          "size_bytes": 27430
+        },
+        {
+          "section": "Item 7",
+          "file": "raw/2025-01-26_10-K/item7_mda.md",
+          "size_bytes": 3304
+        },
+        {
+          "section": "Item 7A",
+          "file": "raw/2025-01-26_10-K/item7a_market_risk.md",
+          "size_bytes": 3304
+        },
+        {
+          "section": "Item 8",
+          "file": "raw/2025-01-26_10-K/item8_financials.md",
+          "size_bytes": 207
+        }
+      ],
+      "financial_snapshot": "raw/2025-01-26_10-K/financial_snapshot.json"
+    },
+    {
+      "type": "10-Q",
+      "filing_date": "2025-11-19",
+      "report_date": "2025-10-26",
+      "accession_number": "0001045810-25-000230",
+      "local_path": "/Users/june/Desktop/AI/claude/StockAnalyst/stock-research-agent/files/NVDA/filings/2025-10-26_10-Q_000104581025000230/nvda-20251026.htm",
+      "extracted_sections": [
+        {
+          "section": "Item 1",
+          "file": "raw/2025-10-26_10-Q/item1_business.md",
+          "size_bytes": 700
+        },
+        {
+          "section": "Item 2",
+          "file": "raw/2025-10-26_10-Q/item2_mda.md",
+          "size_bytes": 230
+        },
+        {
+          "section": "Item 1A",
+          "file": "raw/2025-10-26_10-Q/item1a_risk_factors.md",
+          "size_bytes": 46211
+        }
+      ],
+      "financial_snapshot": "raw/2025-10-26_10-Q/financial_snapshot.json"
+    },
+    {
+      "type": "DEF 14A",
+      "filing_date": "2025-05-13",
+      "report_date": "2025-06-25",
+      "accession_number": "0001045810-25-000095",
+      "local_path": "/Users/june/Desktop/AI/claude/StockAnalyst/stock-research-agent/files/NVDA/filings/2025-06-25_DEF-14A_000104581025000095/nvda-20250512.htm",
+      "extracted_sections": []
+    }
+  ]
+}
