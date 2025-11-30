@@ -4,7 +4,8 @@ SEC 文件预处理脚本
 功能：
 1. 下载公司的 SEC filings (10-K, 10-Q, DEF 14A, S-1, 8-K)
 2. 提取关键章节为 markdown 文件
-3. 生成 _index.json 索引文件
+3. 智能压缩内容，减少 token 消耗
+4. 生成 _index.json 索引文件
 
 使用方法：
     python preprocess_sec.py TICKER [--filings 10-K,10-Q,DEF-14A]
@@ -26,6 +27,7 @@ SEC 文件预处理脚本
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +37,91 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from tools.sec_tools import SECTools
+
+
+# ============ 内容压缩配置 ============
+
+# 每个章节的最大字符数限制
+MAX_SECTION_CHARS = {
+    "Item 1": 20000,      # Business - 保留更多
+    "Item 1A": 15000,     # Risk Factors - 压缩最多
+    "Item 2": 15000,      # MD&A (10-Q)
+    "Item 7": 20000,      # MD&A (10-K) - 保留更多
+    "Item 7A": 10000,     # Market Risk
+    "Item 8": 15000,      # Financials
+}
+
+# 要删除的法律模板语言模式
+BOILERPLATE_PATTERNS = [
+    # 常见的法律免责声明
+    r"may have a material adverse effect on our business,? financial condition,? and results of operations",
+    r"could have a material adverse effect on our business,? financial condition,? and results of operations",
+    r"which could harm our business,? financial condition and results of operations",
+    r"could negatively impact our business and financial results",
+    r"may negatively impact our business and financial results",
+    r"could materially and adversely affect our business",
+    r"may materially and adversely affect our business",
+    r"there can be no assurance that",
+    r"we cannot guarantee that",
+    r"we may not be able to",
+    # 重复的时间表达
+    r"in the future",
+    r"from time to time",
+]
+
+# 编译正则表达式
+BOILERPLATE_REGEX = [re.compile(p, re.IGNORECASE) for p in BOILERPLATE_PATTERNS]
+
+
+def compress_section_content(content: str, section_name: str) -> str:
+    """
+    智能压缩章节内容，减少 token 消耗但保留关键信息。
+
+    策略：
+    1. 删除重复的法律模板语言
+    2. 压缩多余空白
+    3. 如果仍然超过限制，按段落截取
+    """
+    if not content:
+        return content
+
+    original_len = len(content)
+    max_chars = MAX_SECTION_CHARS.get(section_name, 15000)
+
+    # 如果内容已经很短，不需要压缩
+    if len(content) <= max_chars:
+        return content
+
+    # Step 1: 删除常见的法律模板语言（替换为简短版本）
+    for pattern in BOILERPLATE_REGEX:
+        content = pattern.sub("", content)
+
+    # Step 2: 压缩多余空白
+    content = re.sub(r'\n{3,}', '\n\n', content)  # 多个换行压缩为两个
+    content = re.sub(r' {2,}', ' ', content)       # 多个空格压缩为一个
+    content = re.sub(r'\t+', ' ', content)         # Tab 替换为空格
+
+    # Step 3: 删除重复的 bullet points 前缀
+    content = re.sub(r'(• ){2,}', '• ', content)
+
+    # Step 4: 如果仍然超过限制，智能截取
+    if len(content) > max_chars:
+        # 尝试在段落边界截取
+        paragraphs = content.split('\n\n')
+        truncated = []
+        current_len = 0
+
+        for para in paragraphs:
+            if current_len + len(para) + 2 > max_chars:
+                # 添加截断说明
+                truncated.append(f"\n\n[... 内容已压缩，原文 {original_len:,} 字符 → {current_len:,} 字符 ...]")
+                break
+            truncated.append(para)
+            current_len += len(para) + 2
+
+        content = '\n\n'.join(truncated)
+
+    return content
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 FILES_ROOT = PROJECT_ROOT / "files"
@@ -155,22 +242,34 @@ def preprocess_ticker(
                         filename = SECTION_FILENAME_MAP.get(section_name, section_name.lower().replace(" ", "_"))
                         md_path = output_dir / f"{filename}.md"
 
+                        # 压缩内容
+                        original_len = len(content)
+                        compressed_content = compress_section_content(content, section_name)
+                        compressed_len = len(compressed_content)
+
                         # 写入 markdown
                         md_content = f"# {section_name}\n\n"
                         md_content += f"**Source**: {filing_type} ({report_date})\n"
-                        md_content += f"**Accession**: {filing.get('accession_number')}\n\n"
-                        md_content += "---\n\n"
-                        md_content += content
+                        md_content += f"**Accession**: {filing.get('accession_number')}\n"
+                        if compressed_len < original_len:
+                            md_content += f"**Compressed**: {original_len:,} → {compressed_len:,} chars ({100 - compressed_len * 100 // original_len}% reduction)\n"
+                        md_content += "\n---\n\n"
+                        md_content += compressed_content
 
                         md_path.write_text(md_content, encoding="utf-8")
                         filing_info["extracted_sections"].append({
                             "section": section_name,
                             "file": str(md_path.relative_to(ticker_dir)),
-                            "size_bytes": len(content),
+                            "size_bytes": compressed_len,
+                            "original_size_bytes": original_len,
                         })
 
                         if verbose:
-                            print(f"    ✓ {section_name} → {md_path.name} ({len(content):,} bytes)")
+                            if compressed_len < original_len:
+                                reduction = 100 - compressed_len * 100 // original_len
+                                print(f"    ✓ {section_name} → {md_path.name} ({original_len:,} → {compressed_len:,} bytes, -{reduction}%)")
+                            else:
+                                print(f"    ✓ {section_name} → {md_path.name} ({compressed_len:,} bytes)")
 
             # 获取财务快照
             if filing_type in ["10-K", "10-Q"]:
