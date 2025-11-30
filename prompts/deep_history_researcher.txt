@@ -159,7 +159,7 @@ files/{TICKER}/notes/deep-history/
 
 **目的**：为下游 agent 提供高密度摘要，减少 token 消耗。
 
-**格式要求**（控制在 60 行以内）：
+**格式要求**（控制在 100 行以内）：
 
 ```markdown
 # {TICKER} 历史演进摘要
