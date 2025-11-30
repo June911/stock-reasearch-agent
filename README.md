@@ -48,7 +48,20 @@ cp .env.example .env
 # 编辑 .env 添加 ANTHROPIC_API_KEY 和 SEC_CONTACT
 ```
 
-### 运行 Agent
+### 运行完整流程（推荐）
+
+```bash
+# 一键运行全部 9 个 agents
+uv run python run_pipeline.py --ticker NVDA --model sonnet
+
+# 跳过 Layer 1（使用已有的知识文件）
+uv run python run_pipeline.py --ticker NVDA --model sonnet --skip-layer1
+
+# 只重新生成备忘录
+uv run python run_pipeline.py --ticker NVDA --model sonnet --skip-layer1 --skip-layer2
+```
+
+### 运行单个 Agent
 
 ```bash
 # 运行单个 agent
@@ -84,31 +97,9 @@ uv run python single_agent.py --agent deep-business --ticker NVDA --model sonnet
 | `summary` | 投资备忘录生成 | 全部 7 个知识/观点文件 | `notes/investment_memo.md` |
 | `challenge` | 圆桌思想家挑战 | investment_memo | `notes/investment_memo_challenge.md` |
 
-## 完整研究流程
+## 数据流
 
-### 推荐执行顺序
-
-```bash
-TICKER=NVDA
-MODEL=sonnet
-
-# Layer 1: 知识构建（可并行）
-uv run python single_agent.py --agent deep-history --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent deep-business --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent deep-industrial --ticker $TICKER --model $MODEL
-
-# Layer 2: 观点生成（可并行）
-uv run python single_agent.py --agent view-7powers --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent view-genesis --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent view-order --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent view-ecology --ticker $TICKER --model $MODEL
-
-# Layer 3: 综合输出（顺序执行）
-uv run python single_agent.py --agent summary --ticker $TICKER --model $MODEL
-uv run python single_agent.py --agent challenge --ticker $TICKER --model $MODEL
-```
-
-### 数据依赖关系
+### 依赖关系
 
 ```
 SEC filings (10-K, 10-Q, DEF 14A)

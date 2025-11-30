@@ -140,9 +140,10 @@ AGENT_PRESETS = {
     },
     "view-7powers": {
         "prompt_file": "view/观点_7powers.md",
-        "tools": ["Read", "Write"],
+        "tools": ["Read", "Write", "Glob"],
         "task_template": (
             "基于以下 2 个关键文件对 {ticker} 进行 7 Powers 框架评估：\n"
+            "**重要**：先用 Glob 工具搜索 '**/business_model.md' 和 '**/layer3_judgment.md' 获取文件的完整路径，然后用 Read 工具读取。\n"
             "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
             "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
             "只读取这 2 个文件，不要读取其他文件。"
@@ -237,7 +238,7 @@ def write_session_notes(
     note_path = logs_dir / f"{agent_key}_{timestamp_label}.md"
 
     try:
-        transcript_text = transcript_file.read_text(encoding="utf-8")
+        transcript_text = transcript_file.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         transcript_text = ""
 
