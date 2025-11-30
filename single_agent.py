@@ -127,10 +127,10 @@ AGENT_PRESETS = {
         "prompt_file": "view/观点_秩序.md",
         "tools": ["Read", "Write"],
         "task_template": (
-            "基于以下 3 个关键文件对 {ticker} 进行秩序分析框架评估：\n"
-            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
-            "2. files/{ticker}/notes/deep-history/evolution_analysis.md（演进分析）\n"
-            "3. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "基于以下 3 个精简版文件对 {ticker} 进行秩序分析框架评估：\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/deep-history/_summary.md（历史演进摘要）\n"
+            "3. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n\n"
             "只读取这 3 个文件，不要读取其他文件。"
             "识别其创生公式、权力场强度、坍塌位置和范式脆弱性，"
             "最终给出「换还是不换」的压倒性判断。"
@@ -140,12 +140,11 @@ AGENT_PRESETS = {
     },
     "view-7powers": {
         "prompt_file": "view/观点_7powers.md",
-        "tools": ["Read", "Write", "Glob"],
+        "tools": ["Read", "Write"],
         "task_template": (
-            "基于以下 2 个关键文件对 {ticker} 进行 7 Powers 框架评估：\n"
-            "**重要**：先用 Glob 工具搜索 '**/business_model.md' 和 '**/layer3_judgment.md' 获取文件的完整路径，然后用 Read 工具读取。\n"
-            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
-            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "基于以下 2 个精简版文件对 {ticker} 进行 7 Powers 框架评估：\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n\n"
             "只读取这 2 个文件，不要读取其他文件。"
             "严格按照 prompt 中的输出模板格式输出，不要展开详细分析。"
             "输出保存到 files/{ticker}/notes/views/view_7powers.md（中文）。"
@@ -156,10 +155,10 @@ AGENT_PRESETS = {
         "prompt_file": "view/观点_生态猎手.md",
         "tools": ["Read", "Write"],
         "task_template": (
-            "基于以下 3 个关键文件对 {ticker} 进行生态位猎手分析：\n"
-            "1. files/{ticker}/notes/business-model/business_model.md（商业模式）\n"
-            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n"
-            "3. files/{ticker}/notes/deep-history/evolution_analysis.md（演进分析）\n\n"
+            "基于以下 3 个精简版文件对 {ticker} 进行生态位猎手分析：\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n"
+            "3. files/{ticker}/notes/deep-history/_summary.md（历史演进摘要）\n\n"
             "只读取这 3 个文件，不要读取其他文件。"
             "解码：位置真相、价值逻辑、死亡倒计时、进化引擎，"
             "最终回答：这是正在变强的捕食者，还是正在变肥的猎物？"
@@ -171,9 +170,9 @@ AGENT_PRESETS = {
         "prompt_file": "view/观点_创生公式.md",
         "tools": ["Read", "Write"],
         "task_template": (
-            "基于以下 2 个关键文件对 {ticker} 进行「看相的艺术」分析：\n"
-            "1. files/{ticker}/notes/business-model/business_model.md（商业模式，含财务数据）\n"
-            "2. files/{ticker}/notes/industry/layer3_judgment.md（行业判断）\n\n"
+            "基于以下 2 个精简版文件对 {ticker} 进行「看相的艺术」分析：\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n\n"
             "只读取这 2 个文件，不要读取其他文件。"
             "识别创生公式、评估权力场、定位新稀缺、判断认知折价，"
             "回答这家公司是否代表「压倒性的更高品质秩序系统」。"
@@ -184,13 +183,15 @@ AGENT_PRESETS = {
     # ==================== Summary Agent ====================
     "summary": {
         "prompt_file": "summary_agent.txt",
-        "tools": ["Read", "Write", "Glob"],
+        "tools": ["Read", "Write"],
         "task_template": (
             "综合 {ticker} 的知识库和观点分析，生成投资备忘录。\n"
-            "**重要**：文件路径已明确指定，请直接使用 Read 工具依次读取以下 7 个文件，无需使用 Glob 搜索：\n"
-            "1. files/{ticker}/notes/business-model/business_model.md\n"
-            "2. files/{ticker}/notes/industry/layer3_judgment.md\n"
-            "3. files/{ticker}/notes/deep-history/evolution_analysis.md\n"
+            "**重要**：请使用精简版文件以减少 token 消耗，依次读取以下 7 个文件：\n"
+            "【知识库精简版】\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n"
+            "3. files/{ticker}/notes/deep-history/_summary.md（历史演进摘要）\n"
+            "【观点层输出】\n"
             "4. files/{ticker}/notes/views/view_7powers.md\n"
             "5. files/{ticker}/notes/views/view_order.md\n"
             "6. files/{ticker}/notes/views/view_ecology.md\n"

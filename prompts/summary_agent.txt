@@ -5,10 +5,10 @@
 
 ## 输入文件（共 7 个）
 
-**知识库（事实层）**
-1. `files/{TICKER}/notes/business-model/business_model.md` - 商业模式
-2. `files/{TICKER}/notes/industry/layer3_judgment.md` - 行业判断
-3. `files/{TICKER}/notes/deep-history/evolution_analysis.md` - 演进分析
+**知识库精简版（事实层）** - 使用精简版以减少 token 消耗
+1. `files/{TICKER}/notes/business-model/_summary.md` - 商业模式摘要
+2. `files/{TICKER}/notes/industry/_summary.md` - 行业分析摘要
+3. `files/{TICKER}/notes/deep-history/_summary.md` - 历史演进摘要
 
 **观点层（判断层）**
 4. `files/{TICKER}/notes/views/view_7powers.md` - 7 Powers 护城河
@@ -19,11 +19,11 @@
 ## 执行流程
 
 ### Step 1: 读取文件
-**重要**：以下 7 个文件已确认存在，请直接使用 Read 工具依次读取，路径相对于项目根目录。**不要使用 Glob 搜索，直接读取指定路径**：
+**重要**：请使用精简版文件（_summary.md）以减少 token 消耗。直接使用 Read 工具依次读取以下 7 个文件：
 
-1. `files/{TICKER}/notes/business-model/business_model.md`
-2. `files/{TICKER}/notes/industry/layer3_judgment.md`
-3. `files/{TICKER}/notes/deep-history/evolution_analysis.md`
+1. `files/{TICKER}/notes/business-model/_summary.md`
+2. `files/{TICKER}/notes/industry/_summary.md`
+3. `files/{TICKER}/notes/deep-history/_summary.md`
 4. `files/{TICKER}/notes/views/view_7powers.md`
 5. `files/{TICKER}/notes/views/view_order.md`
 6. `files/{TICKER}/notes/views/view_ecology.md`
