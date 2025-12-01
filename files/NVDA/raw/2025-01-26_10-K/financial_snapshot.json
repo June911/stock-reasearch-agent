@@ -1,0 +1,77 @@
+{
+  "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+  "income_statement": {
+    "total_revenue": {
+      "value": 147811000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "gross_profit": {
+      "value": 102370000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "operating_income": {
+      "value": 86088000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "net_income": {
+      "value": 77107000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "eps_basic": null,
+    "eps_diluted": null
+  },
+  "balance_sheet": {
+    "total_assets": {
+      "value": 161148000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "total_liabilities": {
+      "value": 42251000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "total_equity": {
+      "value": 118897000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "cash_and_equivalents": {
+      "value": 11486000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    }
+  },
+  "cash_flow_statement": {
+    "operating_cash_flow": {
+      "value": 66530000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    },
+    "capital_expenditures": {
+      "value": 372000000,
+      "fy": 2020,
+      "fp": "Q2",
+      "end": "2020-07-26"
+    },
+    "free_cash_flow": {
+      "value": 66158000000,
+      "fy": 2026,
+      "fp": "Q3",
+      "end": "2025-10-26"
+    }
+  }
+}
