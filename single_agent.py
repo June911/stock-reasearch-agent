@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import yfinance as yf
 from dotenv import load_dotenv
 from claude_agent_sdk import (
     ClaudeSDKClient,
@@ -269,6 +270,42 @@ def load_prompt(filename: str) -> str:
         return f.read().strip()
 
 
+def get_stock_data(ticker: str) -> dict:
+    """获取股票实时数据（价格、市值）。
+
+    Returns:
+        dict: {"price": float|None, "market_cap": float|None, "currency": str}
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        price = info.get("currentPrice") or info.get("regularMarketPrice")
+        market_cap = info.get("marketCap")
+        currency = info.get("currency", "USD")
+        return {
+            "price": price,
+            "market_cap": market_cap,
+            "currency": currency,
+        }
+    except Exception as e:
+        print(f"⚠️ 获取 {ticker} 股票数据失败: {e}")
+        return {"price": None, "market_cap": None, "currency": "USD"}
+
+
+def format_market_cap(value: float | None) -> str:
+    """格式化市值显示。"""
+    if value is None:
+        return "数据待更新"
+    if value >= 1e12:
+        return f"{value / 1e12:.2f}T"
+    elif value >= 1e9:
+        return f"{value / 1e9:.2f}B"
+    elif value >= 1e6:
+        return f"{value / 1e6:.2f}M"
+    else:
+        return f"{value:,.0f}"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -332,9 +369,20 @@ def ensure_preprocessing(ticker: str, base_dir: Path) -> bool:
 async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | None):
     config = AGENT_PRESETS[agent_key]
     prompt = load_prompt(config["prompt_file"])
-    # Replace {TICKER} placeholder with ticker
+
+    # 获取实时股票数据（价格、市值）
+    print(f"📈 获取 {ticker} 实时数据...")
+    stock_data = get_stock_data(ticker)
+    price_str = f"{stock_data['price']:.2f}" if stock_data["price"] else "数据待更新"
+    market_cap_str = format_market_cap(stock_data["market_cap"])
+    current_date = datetime.now().strftime("%Y年%m月%d日")
+
+    # 替换所有占位符
     prompt = prompt.replace("{TICKER}", ticker)
-    prompt = prompt.replace("{DATE}", datetime.now().strftime("%Y年%m月"))
+    prompt = prompt.replace("{DATE}", current_date)
+    prompt = prompt.replace("{PRICE}", price_str)
+    prompt = prompt.replace("{MARKET_CAP}", market_cap_str)
+
     # For deep-industrial agent, don't replace {INDUSTRY} - let agent identify it
     if agent_key != "deep-industrial":
         prompt = prompt.replace("{INDUSTRY}", ticker)
