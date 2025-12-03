@@ -74,7 +74,7 @@ class SECTools:
         )
 
     def extract_sec_sections(
-        self, file_path: str, sections: Optional[List[str]] = None
+        self, file_path: str, sections: Optional[List[str]] = None, filing_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Extract key sections from a local SEC HTML filing file.
@@ -87,12 +87,25 @@ class SECTools:
             file_path: Path to local SEC HTML file
             sections: List of sections to extract. Default: ["Item 1", "Item 1A", "Item 7"]
                      Can also include: "Item 2", "Item 3", "Item 8", etc.
+            filing_type: Type of filing ("10-K", "10-Q", "S-1", etc.) to help disambiguate
+                        sections with same name but different content. If not provided,
+                        will try to infer from file path.
 
         Returns:
             Dictionary with extracted sections as keys and clean text as values
         """
         if sections is None:
             sections = ["Item 1", "Item 1A", "Item 7"]
+
+        # Try to infer filing type from file path if not provided
+        if filing_type is None:
+            file_path_upper = str(file_path).upper()
+            if "10-K" in file_path_upper or "10K" in file_path_upper:
+                filing_type = "10-K"
+            elif "10-Q" in file_path_upper or "10Q" in file_path_upper:
+                filing_type = "10-Q"
+            elif "S-1" in file_path_upper or "S1" in file_path_upper:
+                filing_type = "S-1"
 
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
@@ -171,19 +184,33 @@ class SECTools:
                     1, r"(?i)item\s+1a\s*[\.\-\:]?\s*(?:risk\s+factors)?"
                 )
             elif section_name == "Item 1":
-                # Prioritize uppercase ITEM 1 with UNAUDITED/FINANCIAL STATEMENTS (Part I, actual content)
-                # Use word boundary to avoid matching "Item 1a" or "Item 1A"
-                section_patterns.insert(
-                    0, r"ITEM\s+1\s+[\.\-\:]?\s*(?:UNAUDITED|FINANCIAL\s+STATEMENTS)"
-                )
-                section_patterns.insert(
-                    1,
-                    r"(?i)\bItem\s+1\s+[\.\-\:]?\s*(?:unaudited|financial\s+statements)",
-                )
-                # Fallback: match without word boundary but ensure it's not followed by 'a' or 'A'
-                section_patterns.insert(
-                    2, r"(?i)item\s+1(?!\s*[aA])\s*[\.\-\:]?\s*(?:business|unaudited)?"
-                )
+                # Different patterns for 10-K vs 10-Q:
+                # - 10-K Item 1 = Business Description
+                # - 10-Q Item 1 = Financial Statements (Part I)
+                if filing_type == "10-K" or filing_type == "S-1":
+                    # For 10-K/S-1: prioritize "BUSINESS"
+                    section_patterns.insert(
+                        0, r"ITEM\s+1[\.\s]+BUSINESS"
+                    )
+                    section_patterns.insert(
+                        1, r"(?i)item\s+1[\.\s]+business"
+                    )
+                    # Fallback: match Item 1 not followed by 'a', 'A', 'b', 'B', 'c', 'C' (avoid Item 1A, 1B, 1C)
+                    section_patterns.insert(
+                        2, r"(?i)item\s+1(?!\s*[a-cA-C])\s*[\.\-\:]?\s*(?:business)?"
+                    )
+                else:
+                    # For 10-Q: prioritize "FINANCIAL STATEMENTS" or "UNAUDITED"
+                    section_patterns.insert(
+                        0, r"ITEM\s+1\s*[\.\-\:]?\s*(?:UNAUDITED|FINANCIAL\s+STATEMENTS)"
+                    )
+                    section_patterns.insert(
+                        1, r"(?i)item\s+1\s*[\.\-\:]?\s*(?:unaudited|financial\s+statements)"
+                    )
+                    # Fallback
+                    section_patterns.insert(
+                        2, r"(?i)item\s+1(?!\s*[aA])\s*[\.\-\:]?\s*"
+                    )
             elif section_name == "Item 2":
                 # For 10-Q: Part I Item 2 = MD&A, Part II Item 2 = Unregistered Sales
                 # Prioritize MD&A (Management's Discussion)
@@ -229,18 +256,26 @@ class SECTools:
                     lookahead = full_text[match.start() : match.start() + 500]
                     lookahead_upper = lookahead.upper()
 
-                    # Special handling for Item 1: prioritize UNAUDITED/FINANCIAL STATEMENTS
+                    # Special handling for Item 1 based on filing type
                     if section_name == "Item 1":
-                        if (
-                            "UNAUDITED" in lookahead_upper
-                            or "FINANCIAL STATEMENTS" in lookahead_upper
-                        ):
-                            # This is Part I Item 1 - prioritize it
-                            best_match = match
-                            break  # Found the right one, stop searching
-                        elif "LEGAL PROCEEDINGS" in lookahead_upper:
-                            # This is Part II Item 1 - skip it
-                            continue
+                        if filing_type == "10-K" or filing_type == "S-1":
+                            # For 10-K/S-1: prioritize "BUSINESS"
+                            if "BUSINESS" in lookahead_upper:
+                                best_match = match
+                                break  # Found the right one
+                            elif "LEGAL PROCEEDINGS" in lookahead_upper:
+                                # This is Part II Item 1 in 10-Q - skip it
+                                continue
+                        else:
+                            # For 10-Q: prioritize "FINANCIAL STATEMENTS" or "UNAUDITED"
+                            if (
+                                "UNAUDITED" in lookahead_upper
+                                or "FINANCIAL STATEMENTS" in lookahead_upper
+                            ):
+                                best_match = match
+                                break
+                            elif "LEGAL PROCEEDINGS" in lookahead_upper:
+                                continue
 
                     # Special handling for Item 2: prioritize MD&A over Unregistered Sales
                     if section_name == "Item 2":

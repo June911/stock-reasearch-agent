@@ -247,7 +247,7 @@ def preprocess_ticker(
                     if verbose:
                         print(f"  📑 提取章节: {', '.join(sections_to_extract)}")
 
-                    result = tools.extract_sec_sections(local_path, sections_to_extract)
+                    result = tools.extract_sec_sections(local_path, sections_to_extract, filing_type=filing_type)
                     sections = result.get("sections", {})
 
                     for section_name, content in sections.items():
