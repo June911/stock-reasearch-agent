@@ -102,7 +102,7 @@ uv run python single_agent.py --agent deep-business --ticker NVDA --model sonnet
 ### 依赖关系
 
 ```
-SEC filings (10-K, 10-Q, DEF 14A)
+SEC filings (10-K, 10-Q, DEF 14A, S-1)
         │
         ↓ 自动预处理
     _index.json + raw/*.md
@@ -137,6 +137,7 @@ SEC filings (10-K, 10-Q, DEF 14A)
 
 ```
 stock-research-agent/
+├── run_pipeline.py          # 完整流程运行入口（推荐）
 ├── single_agent.py          # 单 agent 运行入口
 ├── preprocess_sec.py        # SEC 文件预处理
 ├── prompts/                 # Agent 系统提示词
@@ -196,6 +197,8 @@ stock-research-agent/
 - **10-K**: 年度报告（业务描述、风险因素、财务数据）
 - **10-Q**: 季度报告（最新财务状况）
 - **DEF 14A**: 代理声明（高管薪酬、股权结构）
+- **S-1 / S-1/A**: IPO 注册声明（适用于新上市公司，作为 10-K 的替代）
+- **424B1-424B4**: 招股说明书（IPO 定价和发行详情）
 
 ### 配置
 
@@ -210,11 +213,13 @@ SEC_REQUEST_DELAY=0.2  # 请求间隔（秒）
 
 | Agent 类型 | 模型 | 典型耗时 | 典型成本 |
 |-----------|------|---------|---------|
-| Layer 1 (知识) | sonnet | 5-10 min | $0.3-0.8 |
-| Layer 2 (观点) | sonnet | 2-5 min | $0.1-0.3 |
+| Layer 1 (知识) | sonnet | 10-25 min/agent | $1-4/agent |
+| Layer 2 (观点) | sonnet | 2-5 min/agent | $0.1-0.3/agent |
 | Summary | sonnet | 3-5 min | $0.2-0.4 |
 | Challenge | sonnet | 3-5 min | $0.2-0.3 |
-| **完整流程** | sonnet | **30-60 min** | **$2-5** |
+| **完整流程** | sonnet | **2-4 小时** | **$8-12** |
+
+> 注：Layer 1 agents 使用 WebSearch 较多，成本波动较大。实测 MELI 完整流程耗时 ~3.5 小时，成本 ~$9。
 
 ## 免责声明
 

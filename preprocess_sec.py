@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from tools.sec_tools import SECTools
@@ -43,12 +44,12 @@ from tools.sec_tools import SECTools
 
 # 每个章节的最大字符数限制
 MAX_SECTION_CHARS = {
-    "Item 1": 20000,      # Business - 保留更多
-    "Item 1A": 15000,     # Risk Factors - 压缩最多
-    "Item 2": 15000,      # MD&A (10-Q)
-    "Item 7": 20000,      # MD&A (10-K) - 保留更多
-    "Item 7A": 10000,     # Market Risk
-    "Item 8": 15000,      # Financials
+    "Item 1": 20000,  # Business - 保留更多
+    "Item 1A": 15000,  # Risk Factors - 压缩最多
+    "Item 2": 15000,  # MD&A (10-Q)
+    "Item 7": 20000,  # MD&A (10-K) - 保留更多
+    "Item 7A": 10000,  # Market Risk
+    "Item 8": 15000,  # Financials
 }
 
 # 要删除的法律模板语言模式
@@ -97,17 +98,17 @@ def compress_section_content(content: str, section_name: str) -> str:
         content = pattern.sub("", content)
 
     # Step 2: 压缩多余空白
-    content = re.sub(r'\n{3,}', '\n\n', content)  # 多个换行压缩为两个
-    content = re.sub(r' {2,}', ' ', content)       # 多个空格压缩为一个
-    content = re.sub(r'\t+', ' ', content)         # Tab 替换为空格
+    content = re.sub(r"\n{3,}", "\n\n", content)  # 多个换行压缩为两个
+    content = re.sub(r" {2,}", " ", content)  # 多个空格压缩为一个
+    content = re.sub(r"\t+", " ", content)  # Tab 替换为空格
 
     # Step 3: 删除重复的 bullet points 前缀
-    content = re.sub(r'(• ){2,}', '• ', content)
+    content = re.sub(r"(• ){2,}", "• ", content)
 
     # Step 4: 如果仍然超过限制，智能截取
     if len(content) > max_chars:
         # 尝试在段落边界截取
-        paragraphs = content.split('\n\n')
+        paragraphs = content.split("\n\n")
         truncated = []
         current_len = 0
 
@@ -120,14 +121,17 @@ def compress_section_content(content: str, section_name: str) -> str:
                     truncated.append(para[:remaining] + "...")
                     current_len = remaining
                 # 添加截断说明
-                truncated.append(f"\n\n[... 内容已压缩，原文 {original_len:,} 字符 → {current_len:,} 字符 ...]")
+                truncated.append(
+                    f"\n\n[... 内容已压缩，原文 {original_len:,} 字符 → {current_len:,} 字符 ...]"
+                )
                 break
             truncated.append(para)
             current_len += len(para) + 2
 
-        content = '\n\n'.join(truncated)
+        content = "\n\n".join(truncated)
 
     return content
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 FILES_ROOT = PROJECT_ROOT / "files"
@@ -201,6 +205,8 @@ def preprocess_ticker(
                 filing = tools.get_latest_10q(ticker)
             elif filing_type == "DEF 14A":
                 filing = tools.get_latest_proxy(ticker)
+            elif filing_type in ["S-1", "S-1/A", "424B4", "424B3", "424B2", "424B1"]:
+                filing = tools.get_latest_s1(ticker)
             else:
                 if verbose:
                     print(f"  ⚠️ 不支持的类型: {filing_type}")
@@ -212,10 +218,14 @@ def preprocess_ticker(
                 continue
 
             if verbose:
-                print(f"  ✓ 找到: {filing.get('filing_date')} ({filing.get('accession_number')})")
+                print(
+                    f"  ✓ 找到: {filing.get('filing_date')} ({filing.get('accession_number')})"
+                )
 
             # 创建输出目录
-            report_date = filing.get("report_date") or filing.get("filing_date") or "unknown"
+            report_date = (
+                filing.get("report_date") or filing.get("filing_date") or "unknown"
+            )
             output_dir = raw_dir / f"{report_date}_{filing_type.replace('/', '-')}"
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -245,37 +255,49 @@ def preprocess_ticker(
                             continue
 
                         # 生成文件名
-                        filename = SECTION_FILENAME_MAP.get(section_name, section_name.lower().replace(" ", "_"))
+                        filename = SECTION_FILENAME_MAP.get(
+                            section_name, section_name.lower().replace(" ", "_")
+                        )
                         md_path = output_dir / f"{filename}.md"
 
                         # 压缩内容
                         original_len = len(content)
-                        compressed_content = compress_section_content(content, section_name)
+                        compressed_content = compress_section_content(
+                            content, section_name
+                        )
                         compressed_len = len(compressed_content)
 
                         # 写入 markdown
                         md_content = f"# {section_name}\n\n"
                         md_content += f"**Source**: {filing_type} ({report_date})\n"
-                        md_content += f"**Accession**: {filing.get('accession_number')}\n"
+                        md_content += (
+                            f"**Accession**: {filing.get('accession_number')}\n"
+                        )
                         if compressed_len < original_len:
                             md_content += f"**Compressed**: {original_len:,} → {compressed_len:,} chars ({100 - compressed_len * 100 // original_len}% reduction)\n"
                         md_content += "\n---\n\n"
                         md_content += compressed_content
 
                         md_path.write_text(md_content, encoding="utf-8")
-                        filing_info["extracted_sections"].append({
-                            "section": section_name,
-                            "file": str(md_path.relative_to(ticker_dir)),
-                            "size_bytes": compressed_len,
-                            "original_size_bytes": original_len,
-                        })
+                        filing_info["extracted_sections"].append(
+                            {
+                                "section": section_name,
+                                "file": str(md_path.relative_to(ticker_dir)),
+                                "size_bytes": compressed_len,
+                                "original_size_bytes": original_len,
+                            }
+                        )
 
                         if verbose:
                             if compressed_len < original_len:
                                 reduction = 100 - compressed_len * 100 // original_len
-                                print(f"    ✓ {section_name} → {md_path.name} ({original_len:,} → {compressed_len:,} bytes, -{reduction}%)")
+                                print(
+                                    f"    ✓ {section_name} → {md_path.name} ({original_len:,} → {compressed_len:,} bytes, -{reduction}%)"
+                                )
                             else:
-                                print(f"    ✓ {section_name} → {md_path.name} ({compressed_len:,} bytes)")
+                                print(
+                                    f"    ✓ {section_name} → {md_path.name} ({compressed_len:,} bytes)"
+                                )
 
             # 获取财务快照
             if filing_type in ["10-K", "10-Q"]:
@@ -284,8 +306,12 @@ def preprocess_ticker(
                 try:
                     snapshot = tools.extract_financial_tables(filing["url"])
                     snapshot_path = output_dir / "financial_snapshot.json"
-                    snapshot_path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
-                    filing_info["financial_snapshot"] = str(snapshot_path.relative_to(ticker_dir))
+                    snapshot_path.write_text(
+                        json.dumps(snapshot, indent=2), encoding="utf-8"
+                    )
+                    filing_info["financial_snapshot"] = str(
+                        snapshot_path.relative_to(ticker_dir)
+                    )
                     if verbose:
                         print(f"    ✓ 财务快照 → financial_snapshot.json")
                 except Exception as e:
@@ -301,14 +327,18 @@ def preprocess_ticker(
 
     # 保存索引
     index_path = ticker_dir / "_index.json"
-    index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
+    index_path.write_text(
+        json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     if verbose:
         print(f"\n{'='*60}")
         print(f"✅ 预处理完成")
         print(f"   索引文件: {index_path}")
         print(f"   处理文件数: {len(index['filings'])}")
-        total_sections = sum(len(f.get('extracted_sections', [])) for f in index['filings'])
+        total_sections = sum(
+            len(f.get("extracted_sections", [])) for f in index["filings"]
+        )
         print(f"   提取章节数: {total_sections}")
         print(f"{'='*60}\n")
 
@@ -329,7 +359,8 @@ def main():
         help="要处理的文件类型，逗号分隔 (默认: 10-K,10-Q,DEF 14A)",
     )
     parser.add_argument(
-        "--quiet", "-q",
+        "--quiet",
+        "-q",
         action="store_true",
         help="安静模式，不打印进度",
     )
