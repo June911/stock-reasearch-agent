@@ -306,6 +306,41 @@ def format_market_cap(value: float | None) -> str:
         return f"{value:,.0f}"
 
 
+def get_recent_news(ticker: str, max_items: int = 5) -> str:
+    """获取最新新闻作为时间锚点。
+
+    Args:
+        ticker: 股票代码
+        max_items: 最多返回的新闻条数
+
+    Returns:
+        格式化的新闻列表字符串
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        news = stock.news[:max_items] if stock.news else []
+
+        if not news:
+            return "暂无最新新闻"
+
+        lines = []
+        for item in news:
+            title = item.get("title", "")
+            # yfinance 的时间戳是 Unix timestamp
+            pub_time = item.get("providerPublishTime", 0)
+            if pub_time:
+                pub_date = datetime.fromtimestamp(pub_time).strftime("%Y-%m-%d %H:%M")
+            else:
+                pub_date = "未知日期"
+            publisher = item.get("publisher", "")
+            lines.append(f"- [{pub_date}] {title} ({publisher})")
+
+        return "\n".join(lines)
+    except Exception as e:
+        print(f"⚠️ 获取 {ticker} 新闻失败: {e}")
+        return "新闻获取失败"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -377,11 +412,16 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
     market_cap_str = format_market_cap(stock_data["market_cap"])
     current_date = datetime.now().strftime("%Y年%m月%d日")
 
+    # 获取最新新闻作为时间锚点
+    print(f"📰 获取 {ticker} 最新新闻...")
+    recent_news = get_recent_news(ticker)
+
     # 替换所有占位符
     prompt = prompt.replace("{TICKER}", ticker)
     prompt = prompt.replace("{DATE}", current_date)
     prompt = prompt.replace("{PRICE}", price_str)
     prompt = prompt.replace("{MARKET_CAP}", market_cap_str)
+    prompt = prompt.replace("{RECENT_NEWS}", recent_news)
 
     # For deep-industrial agent, don't replace {INDUSTRY} - let agent identify it
     if agent_key != "deep-industrial":
