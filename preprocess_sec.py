@@ -145,15 +145,24 @@ FILING_SECTIONS = {
     "8-K": [],  # 8-K 结构不固定
 }
 
-# 章节名称映射（用于文件名）
+# 章节名称映射（用于文件名）- 基础映射
 SECTION_FILENAME_MAP = {
-    "Item 1": "item1_business",
     "Item 1A": "item1a_risk_factors",
     "Item 2": "item2_mda",
     "Item 7": "item7_mda",
     "Item 7A": "item7a_market_risk",
     "Item 8": "item8_financials",
 }
+
+def get_section_filename(section_name: str, filing_type: str) -> str:
+    """根据章节名称和 filing 类型返回文件名。"""
+    # Item 1 在不同 filing 类型中含义不同
+    if section_name == "Item 1":
+        if filing_type in ["10-K", "S-1"]:
+            return "item1_business"
+        else:  # 10-Q
+            return "item1_financials"
+    return SECTION_FILENAME_MAP.get(section_name, section_name.lower().replace(" ", "_"))
 
 
 def preprocess_ticker(
@@ -247,17 +256,17 @@ def preprocess_ticker(
                     if verbose:
                         print(f"  📑 提取章节: {', '.join(sections_to_extract)}")
 
-                    result = tools.extract_sec_sections(local_path, sections_to_extract, filing_type=filing_type)
+                    result = tools.extract_sec_sections(
+                        local_path, sections_to_extract, filing_type=filing_type
+                    )
                     sections = result.get("sections", {})
 
                     for section_name, content in sections.items():
                         if "[Section" in content and "not found" in content:
                             continue
 
-                        # 生成文件名
-                        filename = SECTION_FILENAME_MAP.get(
-                            section_name, section_name.lower().replace(" ", "_")
-                        )
+                        # 生成文件名（根据 filing 类型）
+                        filename = get_section_filename(section_name, filing_type)
                         md_path = output_dir / f"{filename}.md"
 
                         # 压缩内容

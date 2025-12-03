@@ -229,11 +229,12 @@ class SECTools:
                     1, r"(?i)item\s+5\s*[\.\-\:]?\s*(?:other\s+information)"
                 )
             elif section_name == "Item 7":
+                # Use negative lookahead to avoid matching "ITEM 7A"
                 section_patterns.insert(
-                    0, r"ITEM\s+7\s*[\.\-\:]?\s*(?:MANAGEMENT[^\']*DISCUSSION|MDA)?"
+                    0, r"ITEM\s+7(?![aA])\s*[\.\-\:]?\s*(?:MANAGEMENT[^\']*DISCUSSION|MDA)?"
                 )
                 section_patterns.insert(
-                    1, r"(?i)item\s+7\s*[\.\-\:]?\s*(?:management[^\']*discussion|mda)?"
+                    1, r"(?i)item\s+7(?![aA])\s*[\.\-\:]?\s*(?:management[^\']*discussion|mda)?"
                 )
 
             section_text = None
