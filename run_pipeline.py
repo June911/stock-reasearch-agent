@@ -22,7 +22,7 @@ from preprocess_sec import preprocess_ticker
 
 # 定义各层的 agents
 LAYER1_AGENTS = ["deep-history", "deep-business", "deep-industrial"]
-LAYER2_AGENTS = ["view-7powers", "view-genesis", "view-order", "view-ecology"]
+LAYER2_AGENTS = ["view-7powers", "view-genesis", "view-order", "view-ecology", "view-disruptor"]
 LAYER3_AGENTS = ["summary", "challenge"]
 
 

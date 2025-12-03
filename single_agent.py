@@ -181,13 +181,32 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
     },
+    "view-disruptor": {
+        "prompt_file": "view/观点_思维颠覆者.md",
+        "tools": ["Read", "Write"],
+        "task_template": (
+            "基于以下 3 个精简版文件对 {ticker} 进行「思维颠覆者」分析：\n"
+            "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
+            "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n"
+            "3. files/{ticker}/notes/deep-history/_summary.md（历史演进摘要）\n\n"
+            "只读取这 3 个文件，不要读取其他文件。"
+            "用 Pattern Breakers 框架审视：\n"
+            "(1) 寻找浪潮：什么根本性拐点让这家公司成为可能？Why Now？\n"
+            "(2) 寻找非共识：它的核心洞见是什么？大多数人会认为这是错的吗？\n"
+            "(3) 寻找不同：它是「更好的苹果」还是「第一根香蕉」？\n"
+            "(4) 寻找运动：它在发起什么运动？早期信徒为何加入？\n"
+            "最终判断：这是范式颠覆者(Pattern Breaker)还是范式匹配者(Pattern Matcher)？"
+            "输出保存到 files/{ticker}/notes/views/view_disruptor.md（中文）。"
+        ),
+        "ensure_notes_dir": True,
+    },
     # ==================== Summary Agent ====================
     "summary": {
         "prompt_file": "summary_agent.txt",
         "tools": ["Read", "Write"],
         "task_template": (
             "综合 {ticker} 的知识库和观点分析，生成投资备忘录。\n"
-            "**重要**：请使用精简版文件以减少 token 消耗，依次读取以下 7 个文件：\n"
+            "**重要**：请使用精简版文件以减少 token 消耗，依次读取以下 8 个文件：\n"
             "【知识库精简版】\n"
             "1. files/{ticker}/notes/business-model/_summary.md（商业模式摘要）\n"
             "2. files/{ticker}/notes/industry/_summary.md（行业分析摘要）\n"
@@ -196,7 +215,8 @@ AGENT_PRESETS = {
             "4. files/{ticker}/notes/views/view_7powers.md\n"
             "5. files/{ticker}/notes/views/view_order.md\n"
             "6. files/{ticker}/notes/views/view_ecology.md\n"
-            "7. files/{ticker}/notes/views/view_genesis.md\n\n"
+            "7. files/{ticker}/notes/views/view_genesis.md\n"
+            "8. files/{ticker}/notes/views/view_disruptor.md\n\n"
             "交叉验证各来源的结论，识别共识和分歧。\n"
             "输出控制在 150 行以内，保存到 files/{ticker}/notes/investment_memo.md（中文）。"
         ),
