@@ -1,0 +1,77 @@
+{
+  "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001099590.json",
+  "income_statement": {
+    "total_revenue": {
+      "value": 20134000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "gross_profit": {
+      "value": 9074000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "operating_income": {
+      "value": 2312000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "net_income": {
+      "value": 1438000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "eps_basic": null,
+    "eps_diluted": null
+  },
+  "balance_sheet": {
+    "total_assets": {
+      "value": 36691000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "total_liabilities": {
+      "value": 30473000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "total_equity": {
+      "value": 6218000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "cash_and_equivalents": {
+      "value": 2582000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    }
+  },
+  "cash_flow_statement": {
+    "operating_cash_flow": {
+      "value": 6907000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    },
+    "capital_expenditures": {
+      "value": 551000000,
+      "fy": 2024,
+      "fp": "Q3",
+      "end": "2024-09-30"
+    },
+    "free_cash_flow": {
+      "value": 6356000000,
+      "fy": 2025,
+      "fp": "Q3",
+      "end": "2025-09-30"
+    }
+  }
+}
