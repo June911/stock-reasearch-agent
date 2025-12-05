@@ -24,6 +24,10 @@
 │  │view-7powers│ │view-order │ │view-ecology│ │view-genesis│      │
 │  │   护城河   │ │    秩序   │ │   生态位   │ │  创生公式  │       │
 │  └───────────┘ └───────────┘ └───────────┘ └───────────┘       │
+│                      ┌─────────────┐                            │
+│                      │view-disruptor│                           │
+│                      │  思维颠覆者  │                            │
+│                      └─────────────┘                            │
 └─────────────────────────────────────────────────────────────────┘
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -51,7 +55,7 @@ cp .env.example .env
 ### 运行完整流程（推荐）
 
 ```bash
-# 一键运行全部 9 个 agents
+# 一键运行全部 10 个 agents
 uv run python run_pipeline.py --ticker NVDA --model sonnet
 
 # 跳过 Layer 1（使用已有的知识文件）
@@ -89,12 +93,13 @@ uv run python single_agent.py --agent deep-business --ticker NVDA --model sonnet
 | `view-genesis` | 创生公式 | business_model + layer3 | `notes/views/view_genesis.md` |
 | `view-order` | 秩序分析 | business_model + evolution + layer3 | `notes/views/view_order.md` |
 | `view-ecology` | 生态位猎手 | business_model + evolution + layer3 | `notes/views/view_ecology.md` |
+| `view-disruptor` | Pattern Breakers 思维颠覆者 | business_model + evolution + layer3 | `notes/views/view_disruptor.md` |
 
 ### Layer 3: 综合输出 Agents
 
 | Agent | 说明 | 输入 | 输出 |
 |-------|------|------|------|
-| `summary` | 投资备忘录生成 | 全部 7 个知识/观点文件 | `notes/investment_memo.md` |
+| `summary` | 投资备忘录生成 | 全部 8 个知识/观点文件 | `notes/investment_memo.md` |
 | `challenge` | 圆桌思想家挑战 | investment_memo | `notes/investment_memo_challenge.md` |
 
 ## 数据流
@@ -118,10 +123,11 @@ SEC filings (10-K, 10-Q, DEF 14A, S-1)
         ↓              ↓                   ↓
    ┌─────────────────────────────────────────────┐
    │              View Agents                     │
-   │  view-7powers  ← business_model + layer3    │
-   │  view-genesis  ← business_model + layer3    │
-   │  view-order    ← all three                  │
-   │  view-ecology  ← all three                  │
+   │  view-7powers   ← business_model + layer3   │
+   │  view-genesis   ← business_model + layer3   │
+   │  view-order     ← all three                 │
+   │  view-ecology   ← all three                 │
+   │  view-disruptor ← all three                 │
    └─────────────────────────────────────────────┘
                        │
                        ↓
@@ -150,9 +156,11 @@ stock-research-agent/
 │       ├── 观点_7powers.md
 │       ├── 观点_秩序.md
 │       ├── 观点_生态猎手.md
-│       └── 观点_创生公式.md
+│       ├── 观点_创生公式.md
+│       └── 观点_思维颠覆者.md
 ├── tools/                   # 工具模块
-│   └── sec_agent_tool.py    # SEC Edgar API 集成
+│   ├── sec_tools.py         # SEC Edgar API 基础库
+│   └── sec_parser.py        # SEC 文件解析器
 ├── utils/                   # 工具函数
 │   ├── subagent_tracker.py
 │   ├── message_handler.py
@@ -182,7 +190,7 @@ stock-research-agent/
 
 ### 2. 多视角交叉验证
 
-- 4 个 View agents 从不同投资框架分析同一家公司
+- 5 个 View agents 从不同投资框架分析同一家公司
 - Summary 识别多源共识（≥3 源一致）和分歧点
 
 ### 3. 批判性闭环

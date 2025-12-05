@@ -18,7 +18,6 @@ from claude_agent_sdk import (
 from utils.message_handler import process_assistant_message
 from utils.subagent_tracker import SubagentTracker
 from utils.transcript import setup_session, TranscriptWriter
-from tools.sec_agent_tool import SECAgentTool, build_sec_mcp_server
 from preprocess_sec import preprocess_ticker
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
@@ -30,9 +29,6 @@ AGENT_PRESETS = {
             "WebSearch",
             "Write",
             "Read",
-            "get_company_filings",
-            "get_financial_snapshot",
-            "extract_sec_sections",
         ],
         "task_template": (
             "Research the full company history for {ticker} and save concise notes to "
@@ -47,8 +43,6 @@ AGENT_PRESETS = {
             "Write",
             "Read",
             "Glob",
-            "get_financial_snapshot",
-            "extract_sec_sections",
         ],
         "task_template": (
             "对 {ticker} 进行深度历史研究，遵循 3 阶段方法论："
@@ -76,8 +70,6 @@ AGENT_PRESETS = {
             "Write",
             "Read",
             "Glob",
-            "get_financial_snapshot",
-            "extract_sec_sections",
         ],
         "task_template": (
             "对 {ticker} 进行商业模式深度研究："
@@ -465,21 +457,11 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
         ],
     }
 
-    # Initialize SEC MCP server if agent uses SEC tools
-    mcp_servers: dict[str, object] = {}
-    if (
-        "get_company_filings" in config["tools"]
-        or "get_financial_snapshot" in config["tools"]
-    ):
-        sec_tool = SECAgentTool()
-        mcp_servers["sec"] = build_sec_mcp_server(sec_tool)
-
     options = ClaudeAgentOptions(
         permission_mode="bypassPermissions",
         system_prompt=prompt,
         allowed_tools=config["tools"],
         hooks=hooks,
-        mcp_servers=mcp_servers,
         model=model,
     )
 

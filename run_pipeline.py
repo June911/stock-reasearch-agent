@@ -124,6 +124,7 @@ def check_layer2_outputs(ticker: str) -> bool:
         base_dir / "view_genesis.md",
         base_dir / "view_order.md",
         base_dir / "view_ecology.md",
+        base_dir / "view_disruptor.md",
     ]
     missing = [f for f in required_files if not f.exists()]
     if missing:
