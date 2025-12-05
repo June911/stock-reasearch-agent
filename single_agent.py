@@ -54,6 +54,7 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
         "needs_preprocessing": True,
+        "max_tokens": 12000,  # 6000 字约等于 12000 tokens
     },
     "business": {
         "prompt_file": "business_researcher.txt",
@@ -81,6 +82,7 @@ AGENT_PRESETS = {
         ),
         "ensure_notes_dir": True,
         "needs_preprocessing": True,
+        "max_tokens": 16000,  # 8000 字约等于 16000 tokens
     },
     "organization": {
         "prompt_file": "org_researcher.txt",
@@ -117,6 +119,7 @@ AGENT_PRESETS = {
             "**重要**：每层文件控制在 6000 字以内，避免输出过长。"
         ),
         "ensure_notes_dir": True,
+        "max_tokens": 12000,  # 6000 字约等于 12000 tokens
     },
     # ==================== View Agents ====================
     "view-order": {
