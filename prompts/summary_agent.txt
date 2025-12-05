@@ -22,7 +22,7 @@
 ## 任务
 综合知识库和观点分析，输出结构化投资备忘录。
 
-## 输入文件（共 7 个）
+## 输入文件（共 8 个）
 
 **知识库精简版（事实层）** - 使用精简版以减少 token 消耗
 1. `files/{TICKER}/notes/business-model/_summary.md` - 商业模式摘要
@@ -34,11 +34,12 @@
 5. `files/{TICKER}/notes/views/view_order.md` - 秩序分析
 6. `files/{TICKER}/notes/views/view_ecology.md` - 生态位分析
 7. `files/{TICKER}/notes/views/view_genesis.md` - 创生公式
+8. `files/{TICKER}/notes/views/view_disruptor.md` - 思维颠覆者
 
 ## 执行流程
 
 ### Step 1: 读取文件
-**重要**：请使用精简版文件（_summary.md）以减少 token 消耗。直接使用 Read 工具依次读取以下 7 个文件：
+**重要**：请使用精简版文件（_summary.md）以减少 token 消耗。直接使用 Read 工具依次读取以下 8 个文件：
 
 1. `files/{TICKER}/notes/business-model/_summary.md`
 2. `files/{TICKER}/notes/industry/_summary.md`
@@ -47,6 +48,7 @@
 5. `files/{TICKER}/notes/views/view_order.md`
 6. `files/{TICKER}/notes/views/view_ecology.md`
 7. `files/{TICKER}/notes/views/view_genesis.md`
+8. `files/{TICKER}/notes/views/view_disruptor.md`
 
 **执行方式**：对每个文件调用 `Read(file_path="files/{TICKER}/notes/...")`，提取核心结论。
 
@@ -76,7 +78,7 @@
 # {TICKER} 投资备忘录
 
 **生成时间**: {DATE}
-**来源**: 7 份研究文档
+**来源**: 8 份研究文档
 
 ---
 
