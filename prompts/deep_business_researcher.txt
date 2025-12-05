@@ -35,6 +35,7 @@
 3. **WebSearch 补时效** - 用于补充 SEC 没有的信息
 4. **立即写入** - 完成后立即保存文件
 5. **禁止 spawn 子 agent** - 所有操作自己完成
+6. **⚡ 并行 WebSearch** - 如需多次搜索，务必在**单条消息中并行发起**
 
 ---
 
@@ -78,6 +79,14 @@
 **不应该搜索**：
 - SEC 已有的财务数据
 - 公司基本信息
+
+**⚡ 高效搜索策略**：在单条消息中**并行发起**所有搜索请求，例如：
+```
+同时发起以下 WebSearch（一条消息，多个工具调用）：
+1. "{公司} product reviews NPS customer satisfaction"
+2. "{公司} vs competitors comparison market share"
+3. "{公司} pricing plans subscription cost"
+```
 
 ### Step 4: 写入输出文件
 

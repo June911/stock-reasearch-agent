@@ -502,8 +502,11 @@ async def run_agent(agent_key: str, ticker: str, model: str, instruction: str | 
                     "ContentBlockStop",
                     "MessageStart",
                     "MessageStop",
+                    "SystemMessage",  # SDK system metadata
+                    "UserMessage",    # SDK user input echo
+                    "StreamEvent",    # SDK streaming event
                 ):
-                    # Debug: show unknown message types
+                    # Debug: show truly unknown message types
                     print(f"\n[DEBUG] Unknown msg type: {msg_type}", flush=True)
 
             transcript.write("\n")

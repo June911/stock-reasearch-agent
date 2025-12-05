@@ -29,6 +29,7 @@
 3. **分层写文件** - 每层完成后立即写入，避免 context 膨胀
 4. **决策导向** - 不是做百科全书，而是支撑投资决策
 5. **禁止 spawn 子 agent** - 所有操作自己完成
+6. **⚡ 并行 WebSearch** - 同一批次的搜索请求务必在**单条消息中并行发起**，大幅缩短耗时
 
 ---
 
@@ -83,6 +84,15 @@
 - 模型知识：行业定义、产业链结构、竞争格局框架
 - WebSearch：最新市场规模、渗透率、市场份额数据
 
+**⚡ 高效搜索策略**：在单条消息中**并行发起**所有搜索请求，例如：
+```
+同时发起以下 WebSearch（一条消息，多个工具调用）：
+1. "{行业} market size TAM 2025 growth rate"
+2. "{行业} market share leaders top companies 2025"
+3. "{行业} penetration rate adoption 2025"
+4. "{行业} competitive landscape CR3 CR5"
+```
+
 **输出**：`files/{TICKER}/notes/industry/layer1_landscape.md`（写入后再进入下一层）
 
 ---
@@ -118,6 +128,15 @@
 - 历史上类似行业的拐点特征可参考？
 - 周期性：强周期/弱周期/非周期？当前在周期什么位置？
 - 政策影响：监管态度如何？政策变化如何改变竞争格局？
+
+**⚡ 高效搜索策略**：如需补充数据，在单条消息中**并行发起**：
+```
+同时发起以下 WebSearch（一条消息，多个工具调用）：
+1. "{行业} unit economics CAC LTV SaaS"
+2. "{行业} gross margin net margin profit pool"
+3. "{行业} technology trends disruption 2025"
+4. "{行业} regulation policy impact"
+```
 
 **输出**：`files/{TICKER}/notes/industry/layer2_mechanism.md`（写入后再进入下一层）
 
@@ -165,6 +184,14 @@
 - 值得投资吗？核心理由？
 - 什么类型的公司值得关注？
 - 需要持续监控什么指标？
+
+**⚡ 高效搜索策略**：如需补充估值/对比数据，在单条消息中**并行发起**：
+```
+同时发起以下 WebSearch（一条消息，多个工具调用）：
+1. "{行业} valuation multiples EV/Revenue P/E 2025"
+2. "{行业} investment thesis bull bear case"
+3. "{行业} risks disruption threats 2025"
+```
 
 **输出**：`files/{TICKER}/notes/industry/layer3_judgment.md`
 
