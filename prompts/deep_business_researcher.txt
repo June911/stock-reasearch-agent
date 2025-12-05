@@ -44,12 +44,8 @@
 
 **第一步（必须）**：读取 `files/{TICKER}/_index.json`
 - 查看有哪些预处理文件
-- 直接读取 `files/{TICKER}/raw/{date}_{type}/*.md`
-
-**第二步（如果 raw/ 为空）**：
-- 读取 `files/{TICKER}/filings/` 中的 HTML 使用 `extract_sec_sections`
-
-**禁止**：直接调用 `get_company_filings` 下载新文件
+- 直接读取 `files/{TICKER}/raw/{date}_{type}/*.md`（已预处理好的 SEC 数据）
+- 如需财务数据，读取 `files/{TICKER}/raw/*/financial_snapshot.json`
 
 **SEC 数据来源映射**：
 | 模块 | 主要来源 | 提取内容 |
@@ -186,10 +182,8 @@
 
 | 工具 | 用途 |
 |------|------|
-| **Read** | 读取 `_index.json` 和 `raw/*.md` |
+| **Read** | 读取 `_index.json`、`raw/*.md`、`financial_snapshot.json` |
 | **Glob** | 查找文件 |
-| **extract_sec_sections** | 从 HTML 提取章节（仅当 raw/ 为空时） |
-| **get_financial_snapshot** | 获取财务指标 |
 | **WebSearch** | 补充 SEC 没有的信息 |
 | **Write** | 保存结果 |
 
