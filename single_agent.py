@@ -56,6 +56,7 @@ AGENT_PRESETS = {
             "(2) 调查 2-3 个重要疑点；"
             "(3) 综合输出完整时间线和演进分析（中文）。"
             "所有输出保存到 files/{ticker}/notes/deep-history/。"
+            "**重要**：每个文件控制在 6000 字以内，避免输出过长。"
         ),
         "ensure_notes_dir": True,
         "needs_preprocessing": True,
@@ -84,6 +85,7 @@ AGENT_PRESETS = {
             "(1) 先读取 files/{ticker}/_index.json 和 raw/*.md 预处理文件；"
             "(2) 按 9 个模块分析商业模式（价值主张、产品、客户、运营、盈利、生意特性、核心能力、规模化、风险）；"
             "(3) 输出到 files/{ticker}/notes/business-model/business_model.md（中文）。"
+            "**重要**：完整报告控制在 8000 字以内，避免输出过长。"
         ),
         "ensure_notes_dir": True,
         "needs_preprocessing": True,
@@ -120,6 +122,7 @@ AGENT_PRESETS = {
             "(2) 第 2 层：运行机制（为什么）→ 输出 layer2_mechanism.md；"
             "(3) 第 3 层：投资判断（所以呢）→ 输出 layer3_judgment.md。"
             "所有文件保存到 files/{ticker}/notes/industry/（中文撰写）。"
+            "**重要**：每层文件控制在 6000 字以内，避免输出过长。"
         ),
         "ensure_notes_dir": True,
     },
